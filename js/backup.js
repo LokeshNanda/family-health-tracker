@@ -105,6 +105,7 @@ export function lastBackupInfo() {
   } catch (e) { /* ignore */ }
   if (!iso) return 'Last backup: never';
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (Number.isNaN(days)) return 'Last backup: never';
   if (days <= 0) return 'Last backup: today';
   if (days === 1) return 'Last backup: yesterday';
   return `Last backup: ${days} days ago`;

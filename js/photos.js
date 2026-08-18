@@ -6,8 +6,9 @@ const MAX_EDGE = 1600;
 const JPEG_QUALITY = 0.8;
 
 // Downscale to MAX_EDGE on the long side, re-encode as JPEG.
+// imageOrientation honors the camera's EXIF rotation (no-op where auto-applied).
 export async function compressImage(file) {
-  const bitmap = await createImageBitmap(file);
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
   const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
   const w = Math.round(bitmap.width * scale);
   const h = Math.round(bitmap.height * scale);
@@ -31,14 +32,23 @@ export async function getPhotosForRecord(recordId) {
   });
 }
 
-// Full-screen photo viewer overlay; tap anywhere to close.
+// Full-screen photo viewer overlay. Self-cleaning: closes (and revokes its
+// object URL) on tap, Escape, or any navigation (hashchange / back button).
 export function openViewer(blob) {
   const url = URL.createObjectURL(blob);
   const overlay = document.createElement('div');
   overlay.className = 'photo-viewer';
   overlay.innerHTML = `<img src="${url}" alt="Attached photo"><button class="photo-viewer-close" aria-label="Close">&#10005;</button>`;
-  const close = () => { URL.revokeObjectURL(url); overlay.remove(); };
+  const close = () => {
+    URL.revokeObjectURL(url);
+    overlay.remove();
+    window.removeEventListener('hashchange', close);
+    window.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
   overlay.addEventListener('click', close);
+  window.addEventListener('hashchange', close);
+  window.addEventListener('keydown', onKey);
   document.body.appendChild(overlay);
 }
 
@@ -53,12 +63,19 @@ export async function photoPicker(containerEl, existingRecordId) {
   containerEl.innerHTML = `
     <div class="photo-thumbs"></div>
     <label class="btn btn-ghost btn-sm photo-add-btn">&#128247; Add photo
-      <input type="file" accept="image/*" capture="environment" multiple hidden>
+      <input type="file" accept="image/*" multiple hidden>
     </label>
     <p class="error photo-error" hidden></p>`;
   const thumbs = containerEl.querySelector('.photo-thumbs');
   const fileInput = containerEl.querySelector('input[type="file"]');
   const errEl = containerEl.querySelector('.photo-error');
+
+  function revokeAll() {
+    objectUrls.forEach((u) => URL.revokeObjectURL(u));
+    objectUrls.length = 0;
+  }
+  // Abandoned form (back button / navigation) frees the preview URLs.
+  window.addEventListener('hashchange', revokeAll, { once: true });
 
   function renderThumb(blob, key, isExisting) {
     const url = URL.createObjectURL(blob);
@@ -70,6 +87,7 @@ export async function photoPicker(containerEl, existingRecordId) {
     wrap.querySelector('.photo-remove').addEventListener('click', () => {
       if (isExisting) kept.delete(key);
       else added.splice(added.findIndex((a) => a.key === key), 1);
+      URL.revokeObjectURL(url);
       wrap.remove();
     });
     thumbs.appendChild(wrap);
@@ -104,7 +122,7 @@ export async function photoPicker(containerEl, existingRecordId) {
         await put('photos', photo);
         ids.push(photo.id);
       }
-      objectUrls.forEach((u) => URL.revokeObjectURL(u));
+      revokeAll();
       return ids;
     },
   };

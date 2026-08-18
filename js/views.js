@@ -38,7 +38,9 @@ function setTopbar(title, showBack) {
 }
 
 function initials(name) {
-  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  return parts.slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 }
 
 function hueFor(id) {
@@ -135,7 +137,7 @@ export async function homeView(app) {
   app.querySelector('#btn-export').addEventListener('click', async () => {
     const res = await exportBackup();
     app.querySelector('.backup-nudge').textContent =
-      `Backup saved (${res.members} members, ${res.records} records). Keep the file somewhere safe.`;
+      `Backup file created (${res.members} members, ${res.records} records) — check your Downloads folder and keep it somewhere safe.`;
   });
 
   const shareBtn = app.querySelector('#btn-share');
@@ -166,28 +168,33 @@ export async function homeView(app) {
       fileInput.value = '';
       return;
     }
+    const savedOn = /^\d{4}-\d{2}-\d{2}/.test(String(data.exportedAt || ''))
+      ? fmtDate(String(data.exportedAt).slice(0, 10)) : 'unknown date';
     panel.innerHTML = `
       <div class="import-choice">
         <p>This backup holds <strong>${data.members.length}</strong> members, <strong>${data.records.length}</strong> records,
         <strong>${(data.vitals || []).length}</strong> vitals and <strong>${(data.photos || []).length}</strong> photos
-        (saved ${esc(new Date(data.exportedAt).toLocaleDateString())}). How should it be imported?</p>
+        (saved ${savedOn}). How should it be imported?</p>
         <div class="btn-row">
           <button class="btn btn-primary" id="btn-merge">Merge with current data</button>
           <button class="btn btn-danger" id="btn-replace">Replace everything</button>
         </div>
       </div>`;
-    panel.querySelector('#btn-merge').addEventListener('click', async () => {
-      const res = await importBackup(data, 'merge');
-      panel.innerHTML = `<p class="success">Imported ${res.members} members and ${res.records} records.</p>`;
-      fileInput.value = '';
-      setTimeout(() => homeView(app), 900);
-    });
-    panel.querySelector('#btn-replace').addEventListener('click', async () => {
+    const runImport = async (mode, verb) => {
+      try {
+        const res = await importBackup(data, mode);
+        panel.innerHTML = `<p class="success">${verb} ${res.members} members and ${res.records} records.</p>`;
+        fileInput.value = '';
+        setTimeout(() => { if (location.hash === '#/' || location.hash === '') homeView(app); }, 900);
+      } catch (err) {
+        panel.innerHTML = '<p class="error">Import failed — the file may be damaged or your phone\'s storage may be full.</p>';
+        fileInput.value = '';
+      }
+    };
+    panel.querySelector('#btn-merge').addEventListener('click', () => runImport('merge', 'Imported'));
+    panel.querySelector('#btn-replace').addEventListener('click', () => {
       if (!confirm('Replace ALL current data with this backup? This cannot be undone.')) return;
-      const res = await importBackup(data, 'replace');
-      panel.innerHTML = `<p class="success">Restored ${res.members} members and ${res.records} records.</p>`;
-      fileInput.value = '';
-      setTimeout(() => homeView(app), 900);
+      runImport('replace', 'Restored');
     });
   });
 }
@@ -263,6 +270,7 @@ export async function memberFormView(app, memberId) {
       ${field('Blood group', `<select name="bloodGroup">${bloods.map((b) => `<option${member?.bloodGroup === b ? ' selected' : ''}>${b}</option>`).join('')}</select>`)}
       ${field('Allergies', `<input name="allergies" maxlength="200" value="${v('allergies')}" placeholder="e.g., Penicillin, peanuts">`)}
       ${field('Notes', `<textarea name="notes" rows="3" maxlength="1000">${v('notes')}</textarea>`)}
+      <p class="error" id="member-form-error" hidden></p>
       <button class="btn btn-primary btn-block" type="submit">${member ? 'Save changes' : 'Add member'}</button>
     </form>`;
 
@@ -280,7 +288,14 @@ export async function memberFormView(app, memberId) {
       createdAt: member?.createdAt || new Date().toISOString(),
     };
     if (!obj.name) return;
-    await put('members', obj);
+    try {
+      await put('members', obj);
+    } catch (err) {
+      const errEl = app.querySelector('#member-form-error');
+      errEl.textContent = "Couldn't save — your phone's storage may be full.";
+      errEl.hidden = false;
+      return;
+    }
     location.hash = `#/member/${obj.id}`;
   });
 }
@@ -373,8 +388,18 @@ export async function recordFormView(app, { memberId, type, recordId }) {
       obj.endDate = f.get('endDate') || '';
       obj.doctorName = f.get('doctorName').trim();
     }
-    obj.attachments = await picker.commit(obj.id);
-    await put('records', obj);
+    try {
+      // Save the record first so a storage failure can't orphan photo changes,
+      // then persist photo adds/removals and re-save the final attachment list.
+      obj.attachments = record?.attachments || [];
+      await put('records', obj);
+      obj.attachments = await picker.commit(obj.id);
+      await put('records', obj);
+    } catch (err) {
+      errEl.textContent = "Couldn't save — your phone's storage may be full. Free some space or remove old photos, then try again.";
+      errEl.hidden = false;
+      return;
+    }
     location.hash = `#/member/${rMemberId}`;
   });
 
@@ -421,10 +446,11 @@ export async function searchView(app) {
       results.innerHTML = '<p class="hint">Search medicines, symptoms, doctors, diagnoses and notes — across everyone.</p>';
       return;
     }
-    const people = members.filter((m) => m.name.toLowerCase().includes(q));
+    const people = members.filter((m) => String(m.name || '').toLowerCase().includes(q));
     const hits = records
-      .filter((r) => SEARCH_FIELDS.some((k) => (r[k] || '').toLowerCase().includes(q)))
-      .sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || '').localeCompare(a.createdAt || ''));
+      .filter((r) => SEARCH_FIELDS.some((k) => String(r[k] ?? '').toLowerCase().includes(q)))
+      .sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))
+        || (b.createdAt || '').localeCompare(a.createdAt || ''));
 
     let html = '';
     if (people.length) {
@@ -459,13 +485,13 @@ export async function reportView(app, memberId) {
 
   const byYear = new Map();
   for (const r of chrono) {
-    const year = r.date.slice(0, 4);
+    const year = String(r.date || '').slice(0, 4) || 'Undated';
     if (!byYear.has(year)) byYear.set(year, []);
     byYear.get(year).push(r);
   }
 
   const reportRecord = (r) => {
-    const t = TYPES[r.type];
+    const t = TYPES[r.type] || TYPES.symptom;
     return `
       <div class="report-record">
         <div class="report-record-head">

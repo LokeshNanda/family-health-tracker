@@ -49,7 +49,14 @@ document.getElementById('btn-back').addEventListener('click', () => {
 window.addEventListener('hashchange', route);
 
 async function start() {
-  await openDB();
+  try {
+    await openDB();
+  } catch (err) {
+    app.innerHTML = `<div class="empty"><p class="empty-title">Can't open your health book.</p>
+      <p>This browser is blocking local storage (this can happen in private/incognito windows).
+      Open the app in a normal browser window and try again.</p></div>`;
+    return;
+  }
   // Ask the browser not to evict our data (best-effort; matters most on iOS).
   if (navigator.storage && navigator.storage.persist) {
     navigator.storage.persist().catch(() => {});
