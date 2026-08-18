@@ -5,6 +5,7 @@ import {
   countRecordsForMember, deleteMemberCascade, deleteRecordCascade, getAll,
 } from './db.js';
 import { exportBackup, lastBackupInfo, parseBackupFile, importBackup } from './backup.js';
+import { photoPicker } from './photos.js';
 
 // ---- Shared helpers ----
 
@@ -97,7 +98,7 @@ function recordCard(r, opts = {}) {
       <a class="record-body" href="#/record/${esc(r.id)}/edit" aria-label="Edit ${esc(r.title)}">
         <div class="record-top">
           <span class="record-date">${fmtDate(r.date)}</span>
-          <span class="record-type">${t.label}${opts.memberName ? ` · ${esc(opts.memberName)}` : ''}</span>
+          <span class="record-type">${t.label}${opts.memberName ? ` · ${esc(opts.memberName)}` : ''}${(r.attachments && r.attachments.length) ? ` <span class="badge badge-photos">&#128206;${r.attachments.length}</span>` : ''}</span>
         </div>
         <div class="record-title">${esc(r.title)}</div>
         ${detail ? `<div class="record-detail">${detail}</div>` : ''}
@@ -336,10 +337,13 @@ export async function recordFormView(app, { memberId, type, recordId }) {
       ${field(TITLE_LABEL[rType], `<input name="title" required maxlength="120" value="${v('title')}" placeholder="${TITLE_HINT[rType]}" autocomplete="off">`)}
       ${extra}
       ${field('Notes', `<textarea name="notes" rows="3" maxlength="2000">${v('notes')}</textarea>`)}
+      <div class="field"><span class="field-label">Photos (prescriptions, reports)</span><div id="photo-picker"></div></div>
       <p class="error" id="form-error" hidden></p>
       <button class="btn btn-primary btn-block" type="submit">${record ? 'Save changes' : `Add ${t.label.toLowerCase()}`}</button>
       ${record ? '<button class="btn btn-danger-ghost btn-block" type="button" id="btn-del-record">Delete this record</button>' : ''}
     </form>`;
+
+  const picker = await photoPicker(app.querySelector('#photo-picker'), record?.id || null);
 
   app.querySelector('#record-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -359,7 +363,6 @@ export async function recordFormView(app, { memberId, type, recordId }) {
       date,
       title: f.get('title').trim(),
       notes: f.get('notes').trim(),
-      attachments: record?.attachments || [],
       createdAt: record?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -375,6 +378,7 @@ export async function recordFormView(app, { memberId, type, recordId }) {
       obj.endDate = f.get('endDate') || '';
       obj.doctorName = f.get('doctorName').trim();
     }
+    obj.attachments = await picker.commit(obj.id);
     await put('records', obj);
     location.hash = `#/member/${rMemberId}`;
   });

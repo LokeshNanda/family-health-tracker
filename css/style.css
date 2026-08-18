@@ -400,6 +400,34 @@ input:focus-visible, select:focus-visible, textarea:focus-visible,
 .report-record-detail, .report-record-notes { font-size: 0.9rem; color: var(--ink-soft); }
 .report-record-notes { white-space: pre-wrap; }
 
+/* ---- Photo attachments ---- */
+
+.photo-thumbs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; }
+.photo-thumb { position: relative; }
+.photo-thumb img {
+  width: 72px; height: 72px; object-fit: cover;
+  border-radius: 10px; border: 1px solid var(--line); cursor: pointer;
+  display: block;
+}
+.photo-remove {
+  position: absolute; top: -6px; right: -6px;
+  width: 22px; height: 22px; border-radius: 50%;
+  border: none; background: var(--danger); color: #fff;
+  font-size: 0.7rem; cursor: pointer; line-height: 1;
+}
+.badge-photos { background: var(--paper); color: var(--ink-soft); }
+.photo-viewer {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(20, 30, 26, 0.92);
+  display: flex; align-items: center; justify-content: center;
+}
+.photo-viewer img { max-width: 96vw; max-height: 92vh; border-radius: 8px; }
+.photo-viewer-close {
+  position: absolute; top: calc(0.75rem + env(safe-area-inset-top)); right: 0.75rem;
+  width: 44px; height: 44px; border-radius: 50%; border: none;
+  background: rgba(255, 255, 255, 0.15); color: #fff; font-size: 1.1rem; cursor: pointer;
+}
+
 /* ---- Motion ---- */
 
 @media (prefers-reduced-motion: reduce) {
