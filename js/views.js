@@ -10,26 +10,12 @@ import {
 } from './backup.js';
 import { photoPicker } from './photos.js';
 import { latestVitalsSummary } from './vitals.js';
+import { esc, fmtDate, todayStr, MONTHS, ICONS, TYPES } from './fmt.js';
+
+// Re-exported for compatibility with earlier imports; canonical home is fmt.js.
+export { esc, fmtDate, TYPES };
 
 // ---- Shared helpers ----
-
-export function esc(s) {
-  return String(s ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
-
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-// Format "YYYY-MM-DD" by splitting — never new Date(str), which shifts a day in some timezones.
-export function fmtDate(ymd) {
-  if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return ymd || '';
-  const [y, m, d] = ymd.split('-');
-  return `${Number(d)} ${MONTHS[Number(m) - 1]} ${y}`;
-}
 
 function ageFrom(dob) {
   if (!dob || !/^\d{4}-\d{2}-\d{2}$/.test(dob)) return '';
@@ -43,18 +29,6 @@ function ageFrom(dob) {
   if (years < 2) return `${years * 12 + months} mo`;
   return `${years} yrs`;
 }
-
-const ICONS = {
-  symptom: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 4a2 2 0 1 0-4 0v9.3a4.5 4.5 0 1 0 4 0V4z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="11" cy="17.5" r="2" fill="currentColor"/></svg>',
-  visit: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6.5" width="17" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 6V4.8A1.8 1.8 0 0 1 10.8 3h2.4A1.8 1.8 0 0 1 15 4.8V6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 10v6M9 13h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  medication: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="9" width="18" height="7" rx="3.5" transform="rotate(-35 12 12.5)" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="9.2" y1="14.6" x2="14.8" y2="10.4" stroke="currentColor" stroke-width="1.8"/></svg>',
-};
-
-export const TYPES = {
-  symptom: { label: 'Symptom', plural: 'Symptoms', cls: 'symptom' },
-  visit: { label: 'Doctor visit', plural: 'Visits', cls: 'visit' },
-  medication: { label: 'Medication', plural: 'Medications', cls: 'medication' },
-};
 
 function setTopbar(title, showBack) {
   document.getElementById('topbar-title').textContent = title;
@@ -335,8 +309,6 @@ export async function recordFormView(app, { memberId, type, recordId }) {
   const t = TYPES[rType];
   setTopbar(record ? `Edit ${t.label.toLowerCase()}` : `${t.label} — ${member.name}`, true);
   const v = (k) => esc(record?.[k] ?? '');
-  const today = new Date();
-  const todayStr = [today.getFullYear(), String(today.getMonth() + 1).padStart(2, '0'), String(today.getDate()).padStart(2, '0')].join('-');
 
   let extra = '';
   if (rType === 'symptom') {
@@ -356,7 +328,7 @@ export async function recordFormView(app, { memberId, type, recordId }) {
 
   app.innerHTML = `
     <form class="form" id="record-form">
-      ${field(`${DATE_LABEL[rType]} <span class="req">*</span>`, `<input type="date" name="date" required value="${v('date') || todayStr}">`)}
+      ${field(`${DATE_LABEL[rType]} <span class="req">*</span>`, `<input type="date" name="date" required value="${v('date') || todayStr()}">`)}
       ${field(TITLE_LABEL[rType], `<input name="title" required maxlength="120" value="${v('title')}" placeholder="${TITLE_HINT[rType]}" autocomplete="off">`)}
       ${extra}
       ${field('Notes', `<textarea name="notes" rows="3" maxlength="2000">${v('notes')}</textarea>`)}

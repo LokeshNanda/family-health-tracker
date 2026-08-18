@@ -1,6 +1,7 @@
 // backup.js — JSON export/import of all data.
 
 import { getAll, importData } from './db.js';
+import { todayStr } from './fmt.js';
 
 const APP_ID = 'family-health-tracker';
 const SCHEMA_VERSION = 2;
@@ -47,13 +48,7 @@ async function buildBackupPayload() {
 }
 
 function backupFilename() {
-  const today = new Date();
-  const stamp = [
-    today.getFullYear(),
-    String(today.getMonth() + 1).padStart(2, '0'),
-    String(today.getDate()).padStart(2, '0'),
-  ].join('-');
-  return `fht-backup-${stamp}.json`;
+  return `fht-backup-${todayStr()}.json`;
 }
 
 function markBackupDone() {

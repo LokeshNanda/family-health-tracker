@@ -1,7 +1,7 @@
 // vitals.js — per-member vitals: tabs, SVG line chart, add form, reading list.
 
 import { uuid, put, del, get, getVitalsFor } from './db.js';
-import { esc, fmtDate } from './views.js';
+import { esc, fmtDate, todayStr } from './fmt.js';
 
 export const VITAL_TYPES = {
   weight: { label: 'Weight', unit: 'kg', fields: 'single' },
@@ -9,11 +9,6 @@ export const VITAL_TYPES = {
   sugar: { label: 'Sugar', unit: 'mg/dL', fields: 'single+context' },
   temp: { label: 'Temp', unit: '°F', fields: 'single' },
 };
-
-function todayStr() {
-  const t = new Date();
-  return [t.getFullYear(), String(t.getMonth() + 1).padStart(2, '0'), String(t.getDate()).padStart(2, '0')].join('-');
-}
 
 // Timestamp for x-positioning only (relative spacing; never displayed).
 function ts(v) { return Date.parse(`${v.date}T${v.time || '12:00'}:00`); }
