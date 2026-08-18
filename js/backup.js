@@ -171,6 +171,11 @@ export async function importBackup(data, mode) {
     id: p.id, recordId: p.recordId, createdAt: p.createdAt || '',
     blob: base64ToBlob(p.data, p.mime),
   }));
-  return importData({ members: data.members, records: data.records,
-    vitals: data.vitals || [], photos, vaccines: data.vaccines || [] }, mode);
+  // Normalize dates to strings: a record/vital with a missing or non-string
+  // date would otherwise drop out of the compound indexes and become
+  // invisible on the timeline and report while still counted elsewhere.
+  const records = data.records.map((r) => (typeof r.date === 'string' ? r : { ...r, date: '' }));
+  const vitals = (data.vitals || []).map((v) => (typeof v.date === 'string' ? v : { ...v, date: '' }));
+  return importData({ members: data.members, records,
+    vitals, photos, vaccines: data.vaccines || [] }, mode);
 }
