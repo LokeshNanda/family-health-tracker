@@ -475,17 +475,42 @@ export async function searchView(app) {
 
 // ---- Doctor report ----
 
-export async function reportView(app, memberId) {
+function monthsAgoStr(n) {
+  const d = new Date();
+  d.setMonth(d.getMonth() - n);
+  return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+}
+
+// Plain-text version of detailLine, for the shareable .txt report.
+function plainDetail(r) {
+  if (r.type === 'symptom') return r.resolvedDate ? `Resolved ${fmtDate(r.resolvedDate)}` : 'Ongoing';
+  if (r.type === 'visit') {
+    return [r.doctorName ? `Dr. ${r.doctorName}` : '', r.specialty, r.diagnosis].filter(Boolean).join(' · ');
+  }
+  if (r.type === 'medication') {
+    return [[r.dosage, r.frequency].filter(Boolean).join(' · '),
+      r.endDate ? `Until ${fmtDate(r.endDate)}` : 'Active',
+      r.doctorName ? `Dr. ${r.doctorName}` : ''].filter(Boolean).join(' · ');
+  }
+  return '';
+}
+
+const REPORT_RANGES = [['all', 'All time'], ['6m', 'Last 6 months'], ['1y', 'Last 1 year']];
+
+export async function reportView(app, memberId, range = 'all') {
   const member = await get('members', memberId);
   if (!member) { location.hash = '#/'; return; }
   setTopbar('Doctor report', true);
   const records = await getRecordsForMember(memberId);
-  const chrono = [...records].reverse(); // oldest → newest for the doctor
+  const cutoff = range === '6m' ? monthsAgoStr(6) : (range === '1y' ? monthsAgoStr(12) : '');
+  const chrono = [...records].reverse() // oldest → newest for the doctor
+    .filter((r) => !cutoff || String(r.date || '') >= cutoff);
   const activeMeds = records.filter((r) => r.type === 'medication' && !r.endDate);
   const vitalLines = await latestVitalsSummary(memberId);
   const vax = await vaccinesSummary(memberId);
   const today = new Date();
   const generated = `${today.getDate()} ${MONTHS[today.getMonth()]} ${today.getFullYear()}`;
+  const rangeLabel = (REPORT_RANGES.find(([k]) => k === range) || REPORT_RANGES[0])[1];
 
   const byYear = new Map();
   for (const r of chrono) {
@@ -508,7 +533,13 @@ export async function reportView(app, memberId) {
 
   app.innerHTML = `
     <section class="report">
-      <button class="btn btn-primary btn-block no-print" id="btn-print">Print / Save as PDF</button>
+      <div class="btn-row no-print">
+        <button class="btn btn-primary" id="btn-print">Print / Save as PDF</button>
+        <button class="btn btn-ghost" id="btn-share-report">Share report</button>
+      </div>
+      <div class="chips no-print">
+        ${REPORT_RANGES.map(([k, l]) => `<button class="chip${range === k ? ' chip-on' : ''}" data-range="${k}">${l}</button>`).join('')}
+      </div>
       <header class="report-header">
         <h2 class="report-name">${esc(member.name)}</h2>
         <p class="report-meta">
@@ -527,13 +558,64 @@ export async function reportView(app, memberId) {
       ${activeMeds.length ? `
         <h3 class="report-section">Current medications</h3>
         ${activeMeds.map(reportRecord).join('')}` : ''}
-      <h3 class="report-section">History</h3>
+      <h3 class="report-section">History${range === 'all' ? '' : ` (${rangeLabel.toLowerCase()})`}</h3>
       ${chrono.length
         ? [...byYear.entries()].map(([year, rs]) => `
             <h4 class="report-year">${year}</h4>
             ${rs.map(reportRecord).join('')}`).join('')
-        : '<p class="hint">No records yet.</p>'}
+        : '<p class="hint">No records in this period.</p>'}
     </section>`;
 
   app.querySelector('#btn-print').addEventListener('click', () => window.print());
+  app.querySelectorAll('.chip[data-range]').forEach((chip) => {
+    chip.addEventListener('click', () => reportView(app, memberId, chip.dataset.range));
+  });
+
+  app.querySelector('#btn-share-report').addEventListener('click', async () => {
+    const lines = [
+      'DOCTOR REPORT — Family Health Tracker',
+      member.name,
+      [member.dob ? `Born ${fmtDate(member.dob)}` : '', member.gender,
+        member.bloodGroup ? `Blood group ${member.bloodGroup}` : ''].filter(Boolean).join(' · '),
+      member.allergies ? `ALLERGIES: ${member.allergies}` : '',
+      `Generated ${generated}`,
+      '',
+    ];
+    if (vitalLines.length) lines.push('RECENT VITALS', ...vitalLines.map((l) => `  ${l}`), '');
+    if (vax.given.length || vax.due.length) {
+      lines.push('VACCINATIONS', ...vax.given.map((l) => `  ${l}`));
+      if (vax.due.length) lines.push(`  Due: ${vax.due.join(' · ')}`);
+      lines.push('');
+    }
+    if (activeMeds.length) {
+      lines.push('CURRENT MEDICATIONS',
+        ...activeMeds.map((r) => `  ${fmtDate(r.date)} — ${r.title}${plainDetail(r) ? ` (${plainDetail(r)})` : ''}`), '');
+    }
+    lines.push(`HISTORY (${rangeLabel.toLowerCase()})`);
+    for (const r of chrono) {
+      const t = TYPES[r.type] || TYPES.symptom;
+      lines.push(`  ${fmtDate(r.date)} — ${t.label}: ${r.title}${plainDetail(r) ? ` — ${plainDetail(r)}` : ''}`);
+      if (r.notes) lines.push(`    Notes: ${r.notes}`);
+    }
+    const safeName = String(member.name).replace(/[^\w]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'member';
+    const file = new File([lines.filter((l) => l !== null).join('\n')],
+      `health-report-${safeName}-${todayStr()}.txt`, { type: 'text/plain' });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: `Health report — ${member.name}` });
+        return;
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') return; // user closed the sheet
+    }
+    // Fallback: plain download (also covers desktop browsers without share).
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  });
 }
