@@ -4,6 +4,7 @@ import { openDB } from './db.js';
 import {
   homeView, memberView, memberFormView, recordFormView, searchView, reportView,
 } from './views.js';
+import { vitalsView } from './vitals.js';
 
 const app = document.getElementById('app');
 
@@ -15,6 +16,8 @@ const ROUTES = [
   [/^#\/member\/([^/]+)\/edit$/, (id) => memberFormView(app, id)],
   [/^#\/member\/([^/]+)\/record\/new\/(symptom|visit|medication)$/,
     (memberId, type) => recordFormView(app, { memberId, type })],
+  [/^#\/member\/([^/]+)\/vitals(?:\/(weight|bp|sugar|temp))?$/,
+    (id, type) => vitalsView(app, id, type || 'weight')],
   [/^#\/member\/([^/]+)$/, (id) => memberView(app, id)],
   [/^#\/record\/([^/]+)\/edit$/, (recordId) => recordFormView(app, { recordId })],
   [/^#\/report\/([^/]+)$/, (id) => reportView(app, id)],
@@ -26,7 +29,7 @@ async function route() {
     const match = hash.match(pattern);
     if (match) {
       try {
-        await handler(...match.slice(1).map(decodeURIComponent));
+        await handler(...match.slice(1).map((p) => (p === undefined ? p : decodeURIComponent(p))));
       } catch (err) {
         app.innerHTML = `<div class="empty"><p class="empty-title">Something went wrong.</p><p>Go back home and try again.</p><a class="btn btn-primary" href="#/">Home</a></div>`;
         console.error(err);

@@ -14,6 +14,8 @@
   --leaf: #3F7D4E;
   --line: #DCE4DC;
   --danger: #A03428;
+  --chart-a: #157F5F;
+  --chart-b: #3D6FD8;
   --radius: 14px;
   --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -426,6 +428,42 @@ input:focus-visible, select:focus-visible, textarea:focus-visible,
   position: absolute; top: calc(0.75rem + env(safe-area-inset-top)); right: 0.75rem;
   width: 44px; height: 44px; border-radius: 50%; border: none;
   background: rgba(255, 255, 255, 0.15); color: #fff; font-size: 1.1rem; cursor: pointer;
+}
+
+/* ---- Vitals ---- */
+
+.vital-chart {
+  width: 100%; height: auto;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); margin-bottom: 0.75rem;
+}
+.chart-axis { stroke: var(--line); stroke-width: 1; }
+.chart-lbl { font-size: 9px; fill: var(--ink-soft); font-family: var(--font-body); }
+polyline.chart-line-a { stroke: var(--chart-a); stroke-width: 2; }
+polyline.chart-line-b { stroke: var(--chart-b); stroke-width: 2; }
+.chart-dot.chart-line-a { fill: var(--chart-a); stroke: var(--card); stroke-width: 1.5; }
+.chart-dot.chart-line-b { fill: var(--chart-b); stroke: var(--card); stroke-width: 1.5; }
+.chart-legend { font-size: 0.8rem; color: var(--ink-soft); margin: -0.25rem 0 0.75rem; }
+.legend-a { color: var(--chart-a); }
+.legend-b { color: var(--chart-b); }
+
+.vital-form {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 0.9rem; margin-bottom: 0.75rem;
+}
+.vital-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.vital-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.vital-row {
+  display: flex; align-items: center; gap: 0.6rem;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: 0.5rem 0.75rem;
+}
+.vital-value { font-weight: 600; flex: 1; }
+.vital-value small { color: var(--ink-soft); font-weight: 400; }
+.vital-date { color: var(--ink-soft); font-size: 0.85rem; }
+.vital-del {
+  border: none; background: none; color: var(--danger);
+  font-size: 0.9rem; cursor: pointer; min-width: 32px; min-height: 32px;
 }
 
 /* ---- Motion ---- */

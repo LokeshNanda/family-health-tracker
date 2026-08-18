@@ -220,6 +220,7 @@ export async function memberView(app, memberId, filter = 'all') {
       ${profileChips ? `<div class="pchips">${profileChips}</div>` : ''}
       <div class="btn-row member-actions no-print">
         <a class="btn btn-ghost btn-sm" href="#/member/${esc(memberId)}/edit">Edit profile</a>
+        <a class="btn btn-ghost btn-sm" href="#/member/${esc(memberId)}/vitals">Vitals</a>
         <a class="btn btn-ghost btn-sm" href="#/report/${esc(memberId)}">Doctor report</a>
       </div>
       <div class="chips no-print">${chips}</div>
