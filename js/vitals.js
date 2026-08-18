@@ -85,6 +85,7 @@ export async function vitalsView(app, memberId, type = 'weight') {
   if (!member) { location.hash = '#/'; return; }
   document.getElementById('topbar-title').textContent = `Vitals — ${member.name}`;
   document.getElementById('btn-back').hidden = false;
+  document.getElementById('btn-home').hidden = false;
   const t = VITAL_TYPES[type];
   const readings = await getVitalsFor(memberId, type);
   const newestFirst = [...readings].reverse();

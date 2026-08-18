@@ -59,6 +59,7 @@ export const TYPES = {
 function setTopbar(title, showBack) {
   document.getElementById('topbar-title').textContent = title;
   document.getElementById('btn-back').hidden = !showBack;
+  document.getElementById('btn-home').hidden = !showBack;
   document.title = title === 'Family Health Tracker' ? title : `${title} · Family Health Tracker`;
 }
 
