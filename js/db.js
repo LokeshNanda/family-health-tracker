@@ -2,7 +2,7 @@
 // Data model: see plan — stores `members` and `records` (single store, `type` field).
 
 const DB_NAME = 'fht';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbPromise = null;
 
@@ -33,6 +33,10 @@ export function openDB() {
       if (!db.objectStoreNames.contains('vitals')) {
         const store = db.createObjectStore('vitals', { keyPath: 'id' });
         store.createIndex('byMemberTypeDate', ['memberId', 'type', 'date']);
+      }
+      if (!db.objectStoreNames.contains('vaccines')) {
+        const store = db.createObjectStore('vaccines', { keyPath: 'id' });
+        store.createIndex('memberId', 'memberId');
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -137,10 +141,10 @@ export async function deleteRecordCascade(recordId) {
   await txDone(tx);
 }
 
-// Delete a member with all their records, those records' photos, and their vitals.
+// Delete a member with all their records, those records' photos, vitals, and vaccines.
 export async function deleteMemberCascade(memberId) {
   const db = await openDB();
-  const tx = db.transaction(['members', 'records', 'photos', 'vitals'], 'readwrite');
+  const tx = db.transaction(['members', 'records', 'photos', 'vitals', 'vaccines'], 'readwrite');
   tx.objectStore('members').delete(memberId);
   const recIndex = tx.objectStore('records').index('memberId');
   const recCursor = recIndex.openCursor(IDBKeyRange.only(memberId));
@@ -158,22 +162,36 @@ export async function deleteMemberCascade(memberId) {
     const cursor = vitCursor.result;
     if (cursor) { cursor.delete(); cursor.continue(); }
   };
+  const vacIndex = tx.objectStore('vaccines').index('memberId');
+  const vacCursor = vacIndex.openCursor(IDBKeyRange.only(memberId));
+  vacCursor.onsuccess = () => {
+    const cursor = vacCursor.result;
+    if (cursor) { cursor.delete(); cursor.continue(); }
+  };
   await txDone(tx);
 }
 
-// Import a backup atomically. mode: 'merge' | 'replace'
-export async function importData({ members, records, vitals = [], photos = [] }, mode) {
+export async function getVaccinesFor(memberId) {
   const db = await openDB();
-  const tx = db.transaction(['members', 'records', 'vitals', 'photos'], 'readwrite');
+  const index = db.transaction('vaccines').objectStore('vaccines').index('memberId');
+  return promisify(index.getAll(IDBKeyRange.only(memberId)));
+}
+
+// Import a backup atomically. mode: 'merge' | 'replace'
+export async function importData({ members, records, vitals = [], photos = [], vaccines = [] }, mode) {
+  const db = await openDB();
+  const tx = db.transaction(['members', 'records', 'vitals', 'photos', 'vaccines'], 'readwrite');
   const stores = {
     members: tx.objectStore('members'), records: tx.objectStore('records'),
     vitals: tx.objectStore('vitals'), photos: tx.objectStore('photos'),
+    vaccines: tx.objectStore('vaccines'),
   };
   if (mode === 'replace') Object.values(stores).forEach((s) => s.clear());
   for (const m of members) stores.members.put(m);
   for (const r of records) stores.records.put(r);
   for (const v of vitals) stores.vitals.put(v);
   for (const p of photos) stores.photos.put(p);
+  for (const vc of vaccines) stores.vaccines.put(vc);
   await txDone(tx);
-  return { members: members.length, records: records.length, vitals: vitals.length, photos: photos.length };
+  return { members: members.length, records: records.length, vitals: vitals.length, photos: photos.length, vaccines: vaccines.length };
 }

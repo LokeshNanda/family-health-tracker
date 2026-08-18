@@ -4,7 +4,7 @@ import { getAll, importData } from './db.js';
 import { todayStr } from './fmt.js';
 
 const APP_ID = 'family-health-tracker';
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 const LAST_BACKUP_KEY = 'fht-last-backup';
 
 async function blobToBase64(blob) {
@@ -26,8 +26,8 @@ function base64ToBlob(b64, mime) {
 }
 
 async function buildBackupPayload() {
-  const [members, records, vitals, photoObjs] = await Promise.all([
-    getAll('members'), getAll('records'), getAll('vitals'), getAll('photos'),
+  const [members, records, vitals, photoObjs, vaccines] = await Promise.all([
+    getAll('members'), getAll('records'), getAll('vitals'), getAll('photos'), getAll('vaccines'),
   ]);
   const photos = [];
   for (const p of photoObjs) {
@@ -44,6 +44,7 @@ async function buildBackupPayload() {
     records,
     vitals,
     photos,
+    vaccines,
   };
 }
 
@@ -141,6 +142,16 @@ export async function parseBackupFile(file) {
   if (data.vitals !== undefined && !Array.isArray(data.vitals)) {
     throw new Error('This backup file is incomplete or damaged.');
   }
+  if (data.vaccines !== undefined) {
+    if (!Array.isArray(data.vaccines)) {
+      throw new Error('This backup file is incomplete or damaged.');
+    }
+    for (const vc of data.vaccines) {
+      if (!vc || typeof vc.id !== 'string' || typeof vc.memberId !== 'string' || typeof vc.name !== 'string') {
+        throw new Error('This backup contains an invalid vaccine entry.');
+      }
+    }
+  }
   if (data.photos !== undefined) {
     if (!Array.isArray(data.photos)) {
       throw new Error('This backup file is incomplete or damaged.');
@@ -161,5 +172,5 @@ export async function importBackup(data, mode) {
     blob: base64ToBlob(p.data, p.mime),
   }));
   return importData({ members: data.members, records: data.records,
-    vitals: data.vitals || [], photos }, mode);
+    vitals: data.vitals || [], photos, vaccines: data.vaccines || [] }, mode);
 }

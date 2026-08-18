@@ -5,6 +5,7 @@ import {
   homeView, memberView, memberFormView, recordFormView, searchView, reportView,
 } from './views.js';
 import { vitalsView } from './vitals.js';
+import { vaccinesView } from './vaccines.js';
 
 const app = document.getElementById('app');
 
@@ -16,8 +17,9 @@ const ROUTES = [
   [/^#\/member\/([^/]+)\/edit$/, (id) => memberFormView(app, id)],
   [/^#\/member\/([^/]+)\/record\/new\/(symptom|visit|medication)$/,
     (memberId, type) => recordFormView(app, { memberId, type })],
-  [/^#\/member\/([^/]+)\/vitals(?:\/(weight|bp|sugar|temp))?$/,
+  [/^#\/member\/([^/]+)\/vitals(?:\/(weight|bp|sugar|temp|height))?$/,
     (id, type) => vitalsView(app, id, type || 'weight')],
+  [/^#\/member\/([^/]+)\/vaccines$/, (id) => vaccinesView(app, id)],
   [/^#\/member\/([^/]+)$/, (id) => memberView(app, id)],
   [/^#\/record\/([^/]+)\/edit$/, (recordId) => recordFormView(app, { recordId })],
   [/^#\/report\/([^/]+)$/, (id) => reportView(app, id)],

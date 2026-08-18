@@ -10,6 +10,7 @@ import {
 } from './backup.js';
 import { photoPicker } from './photos.js';
 import { latestVitalsSummary } from './vitals.js';
+import { vaccinesSummary } from './vaccines.js';
 import { esc, fmtDate, todayStr, MONTHS, ICONS, TYPES } from './fmt.js';
 
 // Re-exported for compatibility with earlier imports; canonical home is fmt.js.
@@ -173,7 +174,8 @@ export async function homeView(app) {
     panel.innerHTML = `
       <div class="import-choice">
         <p>This backup holds <strong>${data.members.length}</strong> members, <strong>${data.records.length}</strong> records,
-        <strong>${(data.vitals || []).length}</strong> vitals and <strong>${(data.photos || []).length}</strong> photos
+        <strong>${(data.vitals || []).length}</strong> vitals, <strong>${(data.vaccines || []).length}</strong> vaccines
+        and <strong>${(data.photos || []).length}</strong> photos
         (saved ${savedOn}). How should it be imported?</p>
         <div class="btn-row">
           <button class="btn btn-primary" id="btn-merge">Merge with current data</button>
@@ -224,6 +226,7 @@ export async function memberView(app, memberId, filter = 'all') {
       <div class="btn-row member-actions no-print">
         <a class="btn btn-ghost btn-sm" href="#/member/${esc(memberId)}/edit">Edit profile</a>
         <a class="btn btn-ghost btn-sm" href="#/member/${esc(memberId)}/vitals">Vitals</a>
+        <a class="btn btn-ghost btn-sm" href="#/member/${esc(memberId)}/vaccines">Vaccines</a>
         <a class="btn btn-ghost btn-sm" href="#/report/${esc(memberId)}">Doctor report</a>
       </div>
       <div class="chips no-print">${chips}</div>
@@ -480,6 +483,7 @@ export async function reportView(app, memberId) {
   const chrono = [...records].reverse(); // oldest → newest for the doctor
   const activeMeds = records.filter((r) => r.type === 'medication' && !r.endDate);
   const vitalLines = await latestVitalsSummary(memberId);
+  const vax = await vaccinesSummary(memberId);
   const today = new Date();
   const generated = `${today.getDate()} ${MONTHS[today.getMonth()]} ${today.getFullYear()}`;
 
@@ -516,6 +520,10 @@ export async function reportView(app, memberId) {
       ${vitalLines.length ? `
         <h3 class="report-section">Recent vitals</h3>
         <p class="report-vitals">${vitalLines.map(esc).join(' · ')}</p>` : ''}
+      ${(vax.given.length || vax.due.length) ? `
+        <h3 class="report-section">Vaccinations</h3>
+        ${vax.given.map((line) => `<div class="report-record">${esc(line)}</div>`).join('')}
+        ${vax.due.length ? `<p class="report-vitals"><strong>Due:</strong> ${vax.due.map(esc).join(' · ')}</p>` : ''}` : ''}
       ${activeMeds.length ? `
         <h3 class="report-section">Current medications</h3>
         ${activeMeds.map(reportRecord).join('')}` : ''}

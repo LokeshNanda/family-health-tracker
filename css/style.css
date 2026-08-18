@@ -325,6 +325,7 @@ body {
 }
 .badge-ongoing { background: #FBEFE3; color: var(--marigold); }
 .badge-active { background: #E7F2E8; color: var(--leaf); }
+.badge-overdue { background: #F7E3E0; color: var(--danger); }
 
 .type-picker { margin-top: 1.25rem; }
 
@@ -463,6 +464,25 @@ polyline.chart-line-b { stroke: var(--chart-b); stroke-width: 2; }
 .vital-value small { color: var(--ink-soft); font-weight: 400; }
 .vital-date { color: var(--ink-soft); font-size: 0.85rem; }
 .vital-del {
+  border: none; background: none; color: var(--danger);
+  font-size: 0.9rem; cursor: pointer; min-width: 32px; min-height: 32px;
+}
+
+/* ---- Vaccines ---- */
+
+.vaccine-row {
+  display: flex; align-items: center; gap: 0.6rem;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: 0.5rem 0.75rem;
+}
+.vaccine-row-editing { border-color: var(--pine); }
+.vaccine-body {
+  flex: 1; min-width: 0; border: none; background: none;
+  text-align: left; font: inherit; color: inherit; cursor: pointer; padding: 0;
+}
+.vaccine-name { display: block; font-weight: 600; }
+.vaccine-lot, .vaccine-notes { display: block; font-size: 0.85rem; color: var(--ink-soft); }
+.vaccine-del {
   border: none; background: none; color: var(--danger);
   font-size: 0.9rem; cursor: pointer; min-width: 32px; min-height: 32px;
 }
