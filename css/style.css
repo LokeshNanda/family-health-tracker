@@ -1,0 +1,423 @@
+/* Family Health Tracker — paper-and-ink family health diary.
+   Tokens first; mobile-first layout; print styles at the end. */
+
+:root {
+  --paper: #F3F6F1;
+  --card: #FFFFFF;
+  --ink: #21362E;
+  --ink-soft: #5C6F66;
+  --pine: #2E5D50;
+  --pine-deep: #234A40;
+  --marigold: #B26E12;
+  --rose: #B4483F;
+  --blue: #3A6B9C;
+  --leaf: #3F7D4E;
+  --line: #DCE4DC;
+  --danger: #A03428;
+  --radius: 14px;
+  --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+/* ---- Top bar ---- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--pine);
+  color: #F5F1E6;
+  padding: 0.6rem 0.75rem;
+  padding-top: calc(0.6rem + env(safe-area-inset-top));
+  box-shadow: 0 1px 0 var(--pine-deep);
+}
+
+.topbar-title {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-back,
+.topbar-search {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 1.4rem;
+  cursor: pointer;
+  border-radius: 10px;
+  text-decoration: none;
+}
+
+.topbar-back:active, .topbar-search:active { background: var(--pine-deep); }
+
+/* ---- Layout ---- */
+
+.app {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1rem 1rem calc(2rem + env(safe-area-inset-bottom));
+}
+
+.loading, .hint { color: var(--ink-soft); text-align: center; padding: 1rem 0; }
+
+.section-heading {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 1.5rem 0 0.5rem;
+}
+
+.empty {
+  text-align: center;
+  color: var(--ink-soft);
+  padding: 2rem 1rem;
+}
+
+.empty-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--ink);
+}
+
+/* ---- Buttons ---- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius);
+  border: 1.5px solid transparent;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 80ms ease, background-color 120ms ease;
+}
+
+.btn:active { transform: scale(0.98); }
+
+.btn-primary { background: var(--pine); color: #F5F1E6; }
+.btn-primary:hover { background: var(--pine-deep); }
+
+.btn-ghost {
+  background: var(--card);
+  color: var(--pine);
+  border-color: var(--line);
+}
+
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger-ghost { background: none; color: var(--danger); border-color: transparent; }
+
+.btn-block { display: flex; width: 100%; margin-top: 0.75rem; }
+.btn-sm { min-height: 38px; padding: 0.35rem 0.8rem; font-size: 0.9rem; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.btn-row .btn { flex: 1 1 auto; }
+
+.btn-type { background: var(--card); border-color: var(--line); color: var(--ink); }
+.btn-type svg { width: 20px; height: 20px; }
+.btn-type.type-symptom svg { color: var(--rose); }
+.btn-type.type-visit svg { color: var(--blue); }
+.btn-type.type-medication svg { color: var(--leaf); }
+
+/* ---- Member cards (Home) ---- */
+
+.member-list { list-style: none; margin: 0 0 0.5rem; padding: 0; display: grid; gap: 0.6rem; }
+
+.member-card {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: hsl(var(--hue, 150) 32% 90%);
+  color: hsl(var(--hue, 150) 45% 28%);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.member-info { flex: 1; min-width: 0; }
+.member-name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.member-meta { display: block; color: var(--ink-soft); font-size: 0.85rem; }
+.chevron { color: var(--ink-soft); font-size: 1.4rem; }
+
+/* ---- Profile chips ---- */
+
+.pchips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem; }
+.pchip {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+.pchip-alert {
+  background: #FBEFE3;
+  border-color: #E8CBA4;
+  color: var(--marigold);
+  font-weight: 600;
+}
+
+.member-actions { margin-bottom: 0.75rem; }
+
+/* ---- Filter chips ---- */
+
+.chips { display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 0.25rem; margin-bottom: 0.75rem; }
+.chip {
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip-on { background: var(--pine); border-color: var(--pine); color: #F5F1E6; font-weight: 600; }
+
+/* ---- Timeline (the signature) ---- */
+
+.timeline {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0 0 0 1.1rem;
+  position: relative;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--line);
+}
+
+.record {
+  position: relative;
+  margin-bottom: 0.7rem;
+}
+
+.record-dot {
+  position: absolute;
+  left: -1.1rem;
+  top: 0.9rem;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 30px;
+  margin-left: 15px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 2px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.record-dot svg { width: 16px; height: 16px; }
+.type-symptom .record-dot { border-color: var(--rose); color: var(--rose); }
+.type-visit .record-dot { border-color: var(--blue); color: var(--blue); }
+.type-medication .record-dot { border-color: var(--leaf); color: var(--leaf); }
+
+.record-body {
+  display: block;
+  margin-left: 1.4rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.7rem 0.9rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.record-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.record-date { font-weight: 600; }
+.record-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 0.1rem;
+}
+.record-detail { font-size: 0.9rem; color: var(--ink-soft); margin-top: 0.15rem; }
+.record-notes {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  margin-top: 0.3rem;
+  border-top: 1px dashed var(--line);
+  padding-top: 0.3rem;
+  white-space: pre-wrap;
+}
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.05rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.badge-ongoing { background: #FBEFE3; color: var(--marigold); }
+.badge-active { background: #E7F2E8; color: var(--leaf); }
+
+.type-picker { margin-top: 1.25rem; }
+
+/* ---- Forms ---- */
+
+.form { display: grid; gap: 0.9rem; }
+
+.field { display: grid; gap: 0.3rem; }
+.field-label { font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); }
+.req { color: var(--rose); }
+
+input, select, textarea {
+  font: inherit;
+  color: var(--ink);
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  min-height: 44px;
+  width: 100%;
+}
+
+textarea { resize: vertical; min-height: 70px; }
+
+input:focus-visible, select:focus-visible, textarea:focus-visible,
+.btn:focus-visible, .chip:focus-visible, a:focus-visible, button:focus-visible {
+  outline: 3px solid var(--marigold);
+  outline-offset: 1px;
+}
+
+.error { color: var(--danger); font-weight: 600; }
+.success { color: var(--leaf); font-weight: 600; }
+
+/* ---- Search ---- */
+
+.search-input {
+  font-size: 1.05rem;
+  border-color: var(--pine);
+  margin-bottom: 0.5rem;
+}
+
+/* ---- Backup panel ---- */
+
+.backup-panel {
+  margin-top: 2rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.25rem;
+}
+.backup-nudge { color: var(--ink-soft); font-size: 0.9rem; }
+.import-choice {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.9rem;
+  margin-top: 0.75rem;
+}
+
+/* ---- Doctor report (screen) ---- */
+
+.report-header { border-bottom: 2px solid var(--ink); padding-bottom: 0.6rem; margin: 1rem 0; }
+.report-name { font-family: var(--font-display); font-size: 1.6rem; margin: 0; }
+.report-meta { color: var(--ink-soft); margin: 0.2rem 0; }
+.report-allergies { color: var(--danger); font-weight: 700; margin: 0.3rem 0; }
+.report-generated { font-size: 0.8rem; color: var(--ink-soft); margin: 0.2rem 0 0; }
+
+.report-section {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.2rem;
+  margin: 1.25rem 0 0.5rem;
+}
+.report-year { color: var(--ink-soft); margin: 0.9rem 0 0.3rem; font-size: 0.95rem; }
+.report-record { padding: 0.4rem 0; border-bottom: 1px dotted var(--line); break-inside: avoid; }
+.report-record-detail, .report-record-notes { font-size: 0.9rem; color: var(--ink-soft); }
+.report-record-notes { white-space: pre-wrap; }
+
+/* ---- Motion ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---- Print: clean black-on-white report ---- */
+
+@media print {
+  .no-print, .topbar { display: none !important; }
+  body { background: #fff; color: #000; font-size: 11pt; }
+  .app { max-width: none; padding: 0; }
+  .report-header { border-color: #000; }
+  .report-allergies { color: #000; }
+  .report-record { border-color: #999; }
+  .report-record-detail, .report-record-notes, .report-meta, .report-year { color: #333; }
+  .badge { border: 1px solid #333; background: none !important; color: #000 !important; }
+  a { color: inherit; text-decoration: none; }
+}
+
+@page { margin: 1.5cm; }

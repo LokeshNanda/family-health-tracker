@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Family Health Tracker</title>
+  <meta name="description" content="A private, on-device health diary for your family.">
+  <meta name="theme-color" content="#2E5D50">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Health Book">
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <header class="topbar no-print" id="topbar">
+    <button class="topbar-back" id="btn-back" aria-label="Go back" hidden>&#8592;</button>
+    <h1 class="topbar-title" id="topbar-title">Family Health Tracker</h1>
+    <a class="topbar-search" id="btn-search" href="#/search" aria-label="Search records">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </a>
+  </header>
+  <main id="app" class="app">
+    <p class="loading">Opening your health book&hellip;</p>
+  </main>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
