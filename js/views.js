@@ -6,6 +6,7 @@ import {
 } from './db.js';
 import { exportBackup, lastBackupInfo, parseBackupFile, importBackup } from './backup.js';
 import { photoPicker } from './photos.js';
+import { latestVitalsSummary } from './vitals.js';
 
 // ---- Shared helpers ----
 
@@ -459,6 +460,7 @@ export async function reportView(app, memberId) {
   const records = await getRecordsForMember(memberId);
   const chrono = [...records].reverse(); // oldest → newest for the doctor
   const activeMeds = records.filter((r) => r.type === 'medication' && !r.endDate);
+  const vitalLines = await latestVitalsSummary(memberId);
   const today = new Date();
   const generated = `${today.getDate()} ${MONTHS[today.getMonth()]} ${today.getFullYear()}`;
 
@@ -492,6 +494,9 @@ export async function reportView(app, memberId) {
         ${member.allergies ? `<p class="report-allergies">⚠ Allergies: ${esc(member.allergies)}</p>` : ''}
         <p class="report-generated">Generated ${generated} · Family Health Tracker</p>
       </header>
+      ${vitalLines.length ? `
+        <h3 class="report-section">Recent vitals</h3>
+        <p class="report-vitals">${vitalLines.map(esc).join(' · ')}</p>` : ''}
       ${activeMeds.length ? `
         <h3 class="report-section">Current medications</h3>
         ${activeMeds.map(reportRecord).join('')}` : ''}

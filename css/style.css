@@ -397,6 +397,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible,
   padding-bottom: 0.2rem;
   margin: 1.25rem 0 0.5rem;
 }
+.report-vitals { margin: 0.3rem 0; }
 .report-year { color: var(--ink-soft); margin: 0.9rem 0 0.3rem; font-size: 0.95rem; }
 .report-record { padding: 0.4rem 0; border-bottom: 1px dotted var(--line); break-inside: avoid; }
 .report-record-detail, .report-record-notes { font-size: 0.9rem; color: var(--ink-soft); }
