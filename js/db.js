@@ -2,7 +2,7 @@
 // Data model: see plan — stores `members` and `records` (single store, `type` field).
 
 const DB_NAME = 'fht';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise = null;
 
@@ -25,6 +25,14 @@ export function openDB() {
         const store = db.createObjectStore('records', { keyPath: 'id' });
         store.createIndex('memberId', 'memberId');
         store.createIndex('byMemberDate', ['memberId', 'date']);
+      }
+      if (!db.objectStoreNames.contains('photos')) {
+        const store = db.createObjectStore('photos', { keyPath: 'id' });
+        store.createIndex('recordId', 'recordId');
+      }
+      if (!db.objectStoreNames.contains('vitals')) {
+        const store = db.createObjectStore('vitals', { keyPath: 'id' });
+        store.createIndex('byMemberTypeDate', ['memberId', 'type', 'date']);
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -99,35 +107,73 @@ export async function countRecordsForMember(memberId) {
   return promisify(index.count(memberId));
 }
 
-// Delete a member and all their records atomically.
-export async function deleteMemberCascade(memberId) {
+// Vitals for one member+type, oldest first (charts read left to right).
+export async function getVitalsFor(memberId, type) {
   const db = await openDB();
-  const tx = db.transaction(['members', 'records'], 'readwrite');
-  tx.objectStore('members').delete(memberId);
-  const index = tx.objectStore('records').index('memberId');
-  const cursorReq = index.openCursor(IDBKeyRange.only(memberId));
+  const index = db.transaction('vitals').objectStore('vitals').index('byMemberTypeDate');
+  const range = IDBKeyRange.bound([memberId, type, ''], [memberId, type, '￿']);
+  const vitals = await promisify(index.getAll(range));
+  vitals.sort((a, b) => (a.date === b.date
+    ? ((a.time || '') + a.createdAt).localeCompare((b.time || '') + b.createdAt)
+    : 0));
+  return vitals;
+}
+
+function deletePhotosByRecordId(tx, recordId) {
+  const index = tx.objectStore('photos').index('recordId');
+  const cursorReq = index.openCursor(IDBKeyRange.only(recordId));
   cursorReq.onsuccess = () => {
     const cursor = cursorReq.result;
+    if (cursor) { cursor.delete(); cursor.continue(); }
+  };
+}
+
+// Delete a record and its photos atomically.
+export async function deleteRecordCascade(recordId) {
+  const db = await openDB();
+  const tx = db.transaction(['records', 'photos'], 'readwrite');
+  tx.objectStore('records').delete(recordId);
+  deletePhotosByRecordId(tx, recordId);
+  await txDone(tx);
+}
+
+// Delete a member with all their records, those records' photos, and their vitals.
+export async function deleteMemberCascade(memberId) {
+  const db = await openDB();
+  const tx = db.transaction(['members', 'records', 'photos', 'vitals'], 'readwrite');
+  tx.objectStore('members').delete(memberId);
+  const recIndex = tx.objectStore('records').index('memberId');
+  const recCursor = recIndex.openCursor(IDBKeyRange.only(memberId));
+  recCursor.onsuccess = () => {
+    const cursor = recCursor.result;
     if (cursor) {
+      deletePhotosByRecordId(tx, cursor.value.id);
       cursor.delete();
       cursor.continue();
     }
+  };
+  const vitIndex = tx.objectStore('vitals').index('byMemberTypeDate');
+  const vitCursor = vitIndex.openCursor(IDBKeyRange.bound([memberId, '', ''], [memberId, '￿', '￿']));
+  vitCursor.onsuccess = () => {
+    const cursor = vitCursor.result;
+    if (cursor) { cursor.delete(); cursor.continue(); }
   };
   await txDone(tx);
 }
 
 // Import a backup atomically. mode: 'merge' | 'replace'
-export async function importData(members, records, mode) {
+export async function importData({ members, records, vitals = [], photos = [] }, mode) {
   const db = await openDB();
-  const tx = db.transaction(['members', 'records'], 'readwrite');
-  const mStore = tx.objectStore('members');
-  const rStore = tx.objectStore('records');
-  if (mode === 'replace') {
-    mStore.clear();
-    rStore.clear();
-  }
-  for (const m of members) mStore.put(m);
-  for (const r of records) rStore.put(r);
+  const tx = db.transaction(['members', 'records', 'vitals', 'photos'], 'readwrite');
+  const stores = {
+    members: tx.objectStore('members'), records: tx.objectStore('records'),
+    vitals: tx.objectStore('vitals'), photos: tx.objectStore('photos'),
+  };
+  if (mode === 'replace') Object.values(stores).forEach((s) => s.clear());
+  for (const m of members) stores.members.put(m);
+  for (const r of records) stores.records.put(r);
+  for (const v of vitals) stores.vitals.put(v);
+  for (const p of photos) stores.photos.put(p);
   await txDone(tx);
-  return { members: members.length, records: records.length };
+  return { members: members.length, records: records.length, vitals: vitals.length, photos: photos.length };
 }

@@ -80,5 +80,6 @@ export async function parseBackupFile(file) {
 
 // mode: 'merge' | 'replace'
 export async function importBackup(data, mode) {
-  return importData(data.members, data.records, mode);
+  return importData({ members: data.members, records: data.records,
+    vitals: data.vitals || [], photos: [] }, mode);
 }

@@ -2,7 +2,7 @@
 
 import {
   uuid, get, put, del, getMembers, getRecordsForMember,
-  countRecordsForMember, deleteMemberCascade, getAll,
+  countRecordsForMember, deleteMemberCascade, deleteRecordCascade, getAll,
 } from './db.js';
 import { exportBackup, lastBackupInfo, parseBackupFile, importBackup } from './backup.js';
 
@@ -383,7 +383,7 @@ export async function recordFormView(app, { memberId, type, recordId }) {
   if (delBtn) {
     delBtn.addEventListener('click', async () => {
       if (!confirm('Delete this record?')) return;
-      await del('records', record.id);
+      await deleteRecordCascade(record.id);
       location.hash = `#/member/${rMemberId}`;
     });
   }
