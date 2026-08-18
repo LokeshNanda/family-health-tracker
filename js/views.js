@@ -174,7 +174,8 @@ export async function homeView(app) {
     }
     panel.innerHTML = `
       <div class="import-choice">
-        <p>This backup holds <strong>${data.members.length}</strong> members and <strong>${data.records.length}</strong> records
+        <p>This backup holds <strong>${data.members.length}</strong> members, <strong>${data.records.length}</strong> records,
+        <strong>${(data.vitals || []).length}</strong> vitals and <strong>${(data.photos || []).length}</strong> photos
         (saved ${esc(new Date(data.exportedAt).toLocaleDateString())}). How should it be imported?</p>
         <div class="btn-row">
           <button class="btn btn-primary" id="btn-merge">Merge with current data</button>
