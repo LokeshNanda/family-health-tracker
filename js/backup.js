@@ -24,7 +24,7 @@ function base64ToBlob(b64, mime) {
   return new Blob([bytes], { type: mime || 'image/jpeg' });
 }
 
-export async function exportBackup() {
+async function buildBackupPayload() {
   const [members, records, vitals, photoObjs] = await Promise.all([
     getAll('members'), getAll('records'), getAll('vitals'), getAll('photos'),
   ]);
@@ -35,7 +35,7 @@ export async function exportBackup() {
       mime: p.blob.type, data: await blobToBase64(p.blob),
     });
   }
-  const payload = {
+  return {
     app: APP_ID,
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
@@ -44,25 +44,57 @@ export async function exportBackup() {
     vitals,
     photos,
   };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+}
+
+function backupFilename() {
   const today = new Date();
   const stamp = [
     today.getFullYear(),
     String(today.getMonth() + 1).padStart(2, '0'),
     String(today.getDate()).padStart(2, '0'),
   ].join('-');
+  return `fht-backup-${stamp}.json`;
+}
+
+function markBackupDone() {
+  try {
+    localStorage.setItem(LAST_BACKUP_KEY, new Date().toISOString());
+  } catch (e) { /* storage may be unavailable; nudge just won't update */ }
+}
+
+export async function exportBackup() {
+  const payload = await buildBackupPayload();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
   a.href = url;
-  a.download = `fht-backup-${stamp}.json`;
+  a.download = backupFilename();
   document.body.appendChild(a);
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
+  markBackupDone();
+  return { members: payload.members.length, records: payload.records.length };
+}
+
+// True when the browser can hand a JSON file to the native share sheet.
+export function canShareBackup() {
+  if (!navigator.canShare || !navigator.share) return false;
   try {
-    localStorage.setItem(LAST_BACKUP_KEY, new Date().toISOString());
-  } catch (e) { /* storage may be unavailable; nudge just won't update */ }
-  return { members: members.length, records: records.length };
+    return navigator.canShare({ files: [new File(['x'], 'probe.json', { type: 'application/json' })] });
+  } catch (e) {
+    return false;
+  }
+}
+
+// Opens the native share sheet (Google Drive, WhatsApp, email, ...).
+// Rejects with AbortError if the user closes the sheet — callers ignore that.
+export async function shareBackup() {
+  const payload = await buildBackupPayload();
+  const file = new File([JSON.stringify(payload, null, 2)], backupFilename(), { type: 'application/json' });
+  await navigator.share({ files: [file], title: 'Family Health Tracker backup' });
+  markBackupDone();
+  return { members: payload.members.length, records: payload.records.length };
 }
 
 export function lastBackupInfo() {

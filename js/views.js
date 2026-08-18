@@ -4,7 +4,10 @@ import {
   uuid, get, put, del, getMembers, getRecordsForMember,
   countRecordsForMember, deleteMemberCascade, deleteRecordCascade, getAll,
 } from './db.js';
-import { exportBackup, lastBackupInfo, parseBackupFile, importBackup } from './backup.js';
+import {
+  exportBackup, lastBackupInfo, parseBackupFile, importBackup,
+  canShareBackup, shareBackup,
+} from './backup.js';
 import { photoPicker } from './photos.js';
 import { latestVitalsSummary } from './vitals.js';
 
@@ -142,9 +145,11 @@ export async function homeView(app) {
       ${members.length ? '<a class="btn btn-ghost btn-block" href="#/search">Search all records</a>' : ''}
       <section class="backup-panel">
         <h2 class="section-heading">Backup</h2>
-        <p class="backup-nudge">${esc(lastBackupInfo())} — your data lives only on this device.</p>
+        <p class="backup-nudge">${esc(lastBackupInfo())} — your data lives only on this device.
+        Import can pick the backup file straight from Google Drive.</p>
         <div class="btn-row">
-          <button class="btn btn-ghost" id="btn-export">Export backup</button>
+          <button class="btn btn-ghost" id="btn-share" hidden>Share backup</button>
+          <button class="btn btn-ghost" id="btn-export">Save backup file</button>
           <button class="btn btn-ghost" id="btn-import">Import backup</button>
         </div>
         <input type="file" id="import-file" accept=".json,application/json" hidden>
@@ -156,6 +161,20 @@ export async function homeView(app) {
     const res = await exportBackup();
     app.querySelector('.backup-nudge').textContent =
       `Backup saved (${res.members} members, ${res.records} records). Keep the file somewhere safe.`;
+  });
+
+  const shareBtn = app.querySelector('#btn-share');
+  if (canShareBackup()) shareBtn.hidden = false;
+  shareBtn.addEventListener('click', async () => {
+    try {
+      const res = await shareBackup();
+      app.querySelector('.backup-nudge').textContent =
+        `Backup shared (${res.members} members, ${res.records} records).`;
+    } catch (err) {
+      if (err && err.name === 'AbortError') return; // user closed the share sheet
+      app.querySelector('.backup-nudge').textContent =
+        "Couldn't share the backup — use Save backup file instead.";
+    }
   });
 
   const fileInput = app.querySelector('#import-file');
