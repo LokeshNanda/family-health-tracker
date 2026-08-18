@@ -6,6 +6,7 @@ import {
 } from './views.js';
 import { vitalsView } from './vitals.js';
 import { vaccinesView } from './vaccines.js';
+import { recordDetailView } from './detail.js';
 
 const app = document.getElementById('app');
 
@@ -22,6 +23,7 @@ const ROUTES = [
   [/^#\/member\/([^/]+)\/vaccines$/, (id) => vaccinesView(app, id)],
   [/^#\/member\/([^/]+)$/, (id) => memberView(app, id)],
   [/^#\/record\/([^/]+)\/edit$/, (recordId) => recordFormView(app, { recordId })],
+  [/^#\/record\/([^/]+)$/, (recordId) => recordDetailView(app, recordId)],
   [/^#\/report\/([^/]+)$/, (id) => reportView(app, id)],
 ];
 

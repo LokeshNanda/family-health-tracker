@@ -14,6 +14,7 @@ const ASSETS = [
   './js/photos.js',
   './js/vitals.js',
   './js/vaccines.js',
+  './js/detail.js',
   './manifest.json',
   './icons/icon.svg',
   './icons/icon-192.png',

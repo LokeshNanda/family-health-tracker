@@ -77,7 +77,7 @@ function recordCard(r, opts = {}) {
   return `
     <li class="record type-${t.cls}">
       <span class="record-dot" aria-hidden="true">${ICONS[r.type] || ''}</span>
-      <a class="record-body" href="#/record/${esc(r.id)}/edit" aria-label="Edit ${esc(r.title)}">
+      <a class="record-body" href="#/record/${esc(r.id)}" aria-label="View ${esc(r.title)}">
         <div class="record-top">
           <span class="record-date">${fmtDate(r.date)}</span>
           <span class="record-type">${t.label}${opts.memberName ? ` · ${esc(opts.memberName)}` : ''}${(r.attachments && r.attachments.length) ? ` <span class="badge badge-photos">&#128206;${r.attachments.length}</span>` : ''}</span>
@@ -403,7 +403,7 @@ export async function recordFormView(app, { memberId, type, recordId }) {
       errEl.hidden = false;
       return;
     }
-    location.hash = `#/member/${rMemberId}`;
+    location.hash = record ? `#/record/${obj.id}` : `#/member/${rMemberId}`;
   });
 
   const delBtn = app.querySelector('#btn-del-record');
