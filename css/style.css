@@ -16,6 +16,8 @@
   --danger: #A03428;
   --chart-a: #157F5F;
   --chart-b: #3D6FD8;
+  --pine-ink: #2E5D50; /* pine when used as text/border; lightened in dark mode */
+  color-scheme: light;
   --radius: 14px;
   --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -139,7 +141,7 @@ body {
 
 .btn-ghost {
   background: var(--card);
-  color: var(--pine);
+  color: var(--pine-ink);
   border-color: var(--line);
 }
 
@@ -363,7 +365,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible,
 
 .search-input {
   font-size: 1.05rem;
-  border-color: var(--pine);
+  border-color: var(--pine-ink);
   margin-bottom: 0.5rem;
 }
 
@@ -511,6 +513,36 @@ polyline.chart-line-b { stroke: var(--chart-b); stroke-width: 2; }
 .vaccine-del {
   border: none; background: none; color: var(--danger);
   font-size: 0.9rem; cursor: pointer; min-width: 32px; min-height: 32px;
+}
+
+/* ---- Dark mode (follows the phone's setting; print stays light) ---- */
+
+@media screen and (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --paper: #131C17;
+    --card: #1C2822;
+    --ink: #E4EBE5;
+    --ink-soft: #98ACA0;
+    --line: #31413A;
+    --pine-deep: #1E3B33;
+    --pine-ink: #6FB39F;
+    --marigold: #D9A25A;
+    --rose: #D9837A;
+    --blue: #7FA9DB;
+    --leaf: #7FBD8C;
+    --danger: #E07A6C;
+    --chart-a: #189A6C;
+    --chart-b: #6489DE;
+  }
+  .avatar {
+    background: hsl(var(--hue, 150) 28% 22%);
+    color: hsl(var(--hue, 150) 40% 75%);
+  }
+  .pchip-alert { background: #3A2C1A; border-color: #6B5330; }
+  .badge-ongoing { background: #3A2C1A; }
+  .badge-active { background: #1E3527; }
+  .badge-overdue { background: #3A211D; }
 }
 
 /* ---- Motion ---- */
