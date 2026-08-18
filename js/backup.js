@@ -77,11 +77,13 @@ export async function exportBackup() {
   return { members: payload.members.length, records: payload.records.length };
 }
 
-// True when the browser can hand a JSON file to the native share sheet.
+// True when the browser can hand a text file to the native share sheet.
+// The share uses .txt/text/plain: browsers enforce an allowlist of shareable
+// file types and .json is not on it (share() rejects even when canShare passes).
 export function canShareBackup() {
   if (!navigator.canShare || !navigator.share) return false;
   try {
-    return navigator.canShare({ files: [new File(['x'], 'probe.json', { type: 'application/json' })] });
+    return navigator.canShare({ files: [new File(['x'], 'probe.txt', { type: 'text/plain' })] });
   } catch (e) {
     return false;
   }
@@ -91,7 +93,11 @@ export function canShareBackup() {
 // Rejects with AbortError if the user closes the sheet — callers ignore that.
 export async function shareBackup() {
   const payload = await buildBackupPayload();
-  const file = new File([JSON.stringify(payload, null, 2)], backupFilename(), { type: 'application/json' });
+  const file = new File(
+    [JSON.stringify(payload, null, 2)],
+    backupFilename().replace(/\.json$/, '.txt'),
+    { type: 'text/plain' },
+  );
   await navigator.share({ files: [file], title: 'Family Health Tracker backup' });
   markBackupDone();
   return { members: payload.members.length, records: payload.records.length };

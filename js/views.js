@@ -152,7 +152,7 @@ export async function homeView(app) {
           <button class="btn btn-ghost" id="btn-export">Save backup file</button>
           <button class="btn btn-ghost" id="btn-import">Import backup</button>
         </div>
-        <input type="file" id="import-file" accept=".json,application/json" hidden>
+        <input type="file" id="import-file" accept=".json,.txt,application/json,text/plain" hidden>
         <div id="import-panel"></div>
       </section>
     </section>`;
