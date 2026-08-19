@@ -1,6 +1,6 @@
 // Service worker — cache-first app shell.
 // DEPLOY CHECKLIST: bump CACHE on EVERY deploy or phones keep the old version.
-const CACHE = 'fht-v6';
+const CACHE = 'fht-v7';
 
 const ASSETS = [
   './',

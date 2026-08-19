@@ -39,9 +39,9 @@ export function renderChart(readings, type) {
   const lines = series.map((s, si) => {
     const pts = readings.map((r) => `${x(ts(r)).toFixed(1)},${y(r[s.key]).toFixed(1)}`).join(' ');
     const dots = readings.map((r, i) => `
-      <circle class="chart-dot ${s.cls}" data-i="${i}" data-s="${si}"
-        cx="${x(ts(r)).toFixed(1)}" cy="${y(r[s.key]).toFixed(1)}" r="4">
-        <title>${esc(s.name)} ${esc(String(r[s.key]))} ${VITAL_TYPES[type].unit} — ${fmtDate(r.date)}${r.time ? ` ${esc(r.time)}` : ''}</title>
+      <circle class="chart-dot ${s.cls}${r.medicine ? ' chart-dot-med' : ''}" data-i="${i}" data-s="${si}"
+        cx="${x(ts(r)).toFixed(1)}" cy="${y(r[s.key]).toFixed(1)}" r="${r.medicine ? 5 : 4}">
+        <title>${esc(s.name)} ${esc(String(r[s.key]))} ${VITAL_TYPES[type].unit} — ${fmtDate(r.date)}${r.time ? ` ${esc(r.time)}` : ''}${r.medicine ? ` · ${esc(r.medicine)}` : ''}</title>
       </circle>`).join('');
     return `<polyline class="${s.cls}" fill="none" points="${pts}"/>${dots}`;
   }).join('');
@@ -57,7 +57,8 @@ export function renderChart(readings, type) {
       ${lines}
     </svg>
     <p class="chart-caption" id="chart-caption">Tap a point to see its value.</p>
-    ${type === 'bp' ? '<p class="chart-legend"><span class="legend-a">&#9632;</span> Systolic &nbsp;&nbsp; <span class="legend-b">&#9632;</span> Diastolic</p>' : ''}`;
+    ${type === 'bp' ? '<p class="chart-legend"><span class="legend-a">&#9632;</span> Systolic &nbsp;&nbsp; <span class="legend-b">&#9632;</span> Diastolic</p>' : ''}
+    ${type === 'temp' && readings.some((r) => r.medicine) ? '<p class="chart-legend"><span class="legend-med">&#9673;</span> Medicine given — tap the point to see which</p>' : ''}`;
 }
 
 function valueFields(type, t, editing) {
@@ -70,6 +71,10 @@ function valueFields(type, t, editing) {
       </div>`;
   }
   let extra = '';
+  if (type === 'temp') {
+    extra = `<label class="field"><span class="field-label">Medicine given (optional)</span>
+      <input type="text" name="medicine" maxlength="80" value="${ev('medicine')}" placeholder="e.g., Paracetamol 250mg"></label>`;
+  }
   if (type === 'sugar') {
     const ctx = editing?.context || '';
     extra = `<label class="field"><span class="field-label">When</span><select name="context">
@@ -113,7 +118,8 @@ export async function vitalsView(app, memberId, type = 'weight', editingId = nul
   const rows = newestFirst.map((v) => `
     <li class="vital-row${editing && editing.id === v.id ? ' vaccine-row-editing' : ''}" data-id="${esc(v.id)}">
       <button type="button" class="vital-value vital-edit-btn" aria-label="Edit this reading">${esc(valueLabel(v, type))} <small>${t.unit}</small>
-        ${v.context ? `<span class="badge badge-ongoing">${esc(v.context)}</span>` : ''}</button>
+        ${v.context ? `<span class="badge badge-ongoing">${esc(v.context)}</span>` : ''}
+        ${v.medicine ? `<span class="badge badge-med">${esc(v.medicine)}</span>` : ''}</button>
       <span class="vital-date">${fmtDate(v.date)}${v.time ? ` · ${esc(v.time)}` : ''}</span>
       <button type="button" class="vital-del" aria-label="Delete reading">&#10005;</button>
     </li>`).join('');
@@ -148,7 +154,7 @@ export async function vitalsView(app, memberId, type = 'weight', editingId = nul
       const r = readings[Number(dot.dataset.i)];
       const seriesName = type === 'bp' ? (dot.dataset.s === '0' ? 'Systolic' : 'Diastolic') : t.label;
       const val = type === 'bp' ? (dot.dataset.s === '0' ? r.systolic : r.diastolic) : r.value;
-      caption.textContent = `${seriesName} ${val} ${t.unit} — ${fmtDate(r.date)}${r.time ? ` ${r.time}` : ''}`;
+      caption.textContent = `${seriesName} ${val} ${t.unit} — ${fmtDate(r.date)}${r.time ? ` ${r.time}` : ''}${r.medicine ? ` · ${r.medicine}` : ''}`;
     });
   });
 
@@ -170,6 +176,7 @@ export async function vitalsView(app, memberId, type = 'weight', editingId = nul
     } else {
       obj.value = Number(f.get('value'));
       if (type === 'sugar') obj.context = f.get('context') || '';
+      if (type === 'temp') obj.medicine = (f.get('medicine') || '').trim();
     }
     try {
       await put('vitals', obj);
@@ -207,7 +214,7 @@ export async function latestVitalsSummary(memberId) {
   for (const [key, t] of Object.entries(VITAL_TYPES)) {
     const last = await latestOf(memberId, key);
     if (!last) continue;
-    out.push(`${t.label} ${valueLabel(last, key)} ${t.unit} (${fmtDate(last.date)})`);
+    out.push(`${t.label} ${valueLabel(last, key)} ${t.unit} (${fmtDate(last.date)})${last.medicine ? ` — ${last.medicine}` : ''}`);
   }
   const bmiInfo = await bmiFor(memberId);
   if (bmiInfo) out.push(`BMI ${bmiInfo.bmi}`);

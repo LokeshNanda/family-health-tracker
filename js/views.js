@@ -24,11 +24,18 @@ function ageFrom(dob) {
   const now = new Date();
   let years = now.getFullYear() - y;
   let months = now.getMonth() + 1 - m;
-  if (now.getDate() < d) months -= 1;
+  let days = now.getDate() - d;
+  if (days < 0) {
+    months -= 1;
+    days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+  }
   if (months < 0) { years -= 1; months += 12; }
   if (years < 0) return '';
-  if (years < 2) return `${years * 12 + months} mo`;
-  return `${years} yrs`;
+  const parts = [];
+  if (years) parts.push(`${years} ${years === 1 ? 'yr' : 'yrs'}`);
+  if (months) parts.push(`${months} mo`);
+  if (days) parts.push(`${days} d`);
+  return parts.join(' ') || '0 d';
 }
 
 function setTopbar(title, showBack) {

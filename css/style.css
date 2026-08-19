@@ -328,6 +328,7 @@ body {
 .badge-ongoing { background: #FBEFE3; color: var(--marigold); }
 .badge-active { background: #E7F2E8; color: var(--leaf); }
 .badge-overdue { background: #F7E3E0; color: var(--danger); }
+.badge-med { background: #F7E3E0; color: var(--danger); }
 
 .type-picker { margin-top: 1.25rem; }
 
@@ -447,12 +448,14 @@ polyline.chart-line-a { stroke: var(--chart-a); stroke-width: 2; }
 polyline.chart-line-b { stroke: var(--chart-b); stroke-width: 2; }
 .chart-dot.chart-line-a { fill: var(--chart-a); stroke: var(--card); stroke-width: 1.5; }
 .chart-dot.chart-line-b { fill: var(--chart-b); stroke: var(--card); stroke-width: 1.5; }
+.chart-dot.chart-dot-med { stroke: var(--danger); stroke-width: 2.5; }
 .chart-legend { font-size: 0.8rem; color: var(--ink-soft); margin: -0.25rem 0 0.75rem; }
 .chart-caption { font-size: 0.85rem; color: var(--ink-soft); margin: -0.4rem 0 0.75rem; }
 .chart-dot { cursor: pointer; }
 .vital-edit-btn { border: none; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; padding: 0; }
 .legend-a { color: var(--chart-a); }
 .legend-b { color: var(--chart-b); }
+.legend-med { color: var(--danger); }
 
 .vital-form {
   background: var(--card); border: 1px solid var(--line);
@@ -543,6 +546,7 @@ polyline.chart-line-b { stroke: var(--chart-b); stroke-width: 2; }
   .badge-ongoing { background: #3A2C1A; }
   .badge-active { background: #1E3527; }
   .badge-overdue { background: #3A211D; }
+  .badge-med { background: #3A211D; }
 }
 
 /* ---- Motion ---- */
