@@ -1,9 +1,27 @@
-// photos.js — on-device photo attachments: compression, storage, picker UI, viewer.
+// photos.js — on-device attachments (photos + PDF reports): compression,
+// storage, picker UI, viewer.
 
 import { uuid, put, del, openDB } from './db.js';
 
 const MAX_EDGE = 1600;
 const JPEG_QUALITY = 0.8;
+const MAX_PDF_BYTES = 10 * 1024 * 1024;
+
+export const isPdf = (blob) => blob.type === 'application/pdf';
+
+// Open a PDF in a new tab (iOS/desktop show it inline; Android hands it to a
+// PDF app). The object URL is revoked after the tab has had time to load it.
+export function openPdfExternal(blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
 
 // Downscale to MAX_EDGE on the long side, re-encode as JPEG.
 // imageOrientation honors the camera's EXIF rotation (no-op where auto-applied).
@@ -121,8 +139,8 @@ export async function photoPicker(containerEl, existingRecordId) {
 
   containerEl.innerHTML = `
     <div class="photo-thumbs"></div>
-    <label class="btn btn-ghost btn-sm photo-add-btn">&#128247; Add photo
-      <input type="file" accept="image/*" multiple hidden>
+    <label class="btn btn-ghost btn-sm photo-add-btn">&#128247; Add photo / PDF
+      <input type="file" accept="image/*,application/pdf" multiple hidden>
     </label>
     <p class="error photo-error" hidden></p>`;
   const thumbs = containerEl.querySelector('.photo-thumbs');
@@ -136,41 +154,58 @@ export async function photoPicker(containerEl, existingRecordId) {
   // Abandoned form (back button / navigation) frees the preview URLs.
   window.addEventListener('hashchange', revokeAll, { once: true });
 
-  function renderThumb(blob, key, isExisting) {
-    const url = URL.createObjectURL(blob);
-    objectUrls.push(url);
+  function renderThumb(blob, key, isExisting, name) {
     const wrap = document.createElement('div');
     wrap.className = 'photo-thumb';
-    wrap.innerHTML = `<img src="${url}" alt="Attachment"><button type="button" class="photo-remove" aria-label="Remove photo">&#10005;</button>`;
-    wrap.querySelector('img').addEventListener('click', () => {
-      // Thumbnail order: kept existing photos first, then pending adds.
-      const current = [
-        ...existing.filter((p) => kept.has(p.id)).map((p) => p.blob),
-        ...added.map((a) => a.blob),
-      ];
-      openViewer(current, Math.max(0, current.indexOf(blob)));
-    });
+    let url = null;
+    if (isPdf(blob)) {
+      wrap.innerHTML = `<button type="button" class="photo-thumb-pdf" aria-label="Open PDF"><span class="pdf-badge">PDF</span><span class="pdf-name"></span></button><button type="button" class="photo-remove" aria-label="Remove attachment">&#10005;</button>`;
+      wrap.querySelector('.pdf-name').textContent = name || 'Report';
+      wrap.querySelector('.photo-thumb-pdf').addEventListener('click', () => openPdfExternal(blob));
+    } else {
+      url = URL.createObjectURL(blob);
+      objectUrls.push(url);
+      wrap.innerHTML = `<img src="${url}" alt="Attachment"><button type="button" class="photo-remove" aria-label="Remove photo">&#10005;</button>`;
+      wrap.querySelector('img').addEventListener('click', () => {
+        // Viewer swipes through images only; PDFs open in their own tab.
+        // Thumbnail order: kept existing photos first, then pending adds.
+        const current = [
+          ...existing.filter((p) => kept.has(p.id)).map((p) => p.blob),
+          ...added.map((a) => a.blob),
+        ].filter((b) => !isPdf(b));
+        openViewer(current, Math.max(0, current.indexOf(blob)));
+      });
+    }
     wrap.querySelector('.photo-remove').addEventListener('click', () => {
       if (isExisting) kept.delete(key);
       else added.splice(added.findIndex((a) => a.key === key), 1);
-      URL.revokeObjectURL(url);
+      if (url) URL.revokeObjectURL(url);
       wrap.remove();
     });
     thumbs.appendChild(wrap);
   }
 
-  for (const p of existing) renderThumb(p.blob, p.id, true);
+  for (const p of existing) renderThumb(p.blob, p.id, true, p.name);
 
   fileInput.addEventListener('change', async () => {
     errEl.hidden = true;
     for (const file of fileInput.files) {
       try {
-        const blob = await compressImage(file);
-        const entry = { key: uuid(), blob };
+        let entry;
+        if (isPdf(file)) {
+          if (file.size > MAX_PDF_BYTES) {
+            errEl.textContent = `"${file.name}" is too big — PDFs up to 10 MB are supported.`;
+            errEl.hidden = false;
+            continue;
+          }
+          entry = { key: uuid(), blob: file, name: file.name };
+        } else {
+          entry = { key: uuid(), blob: await compressImage(file) };
+        }
         added.push(entry);
-        renderThumb(blob, entry.key, false);
+        renderThumb(entry.blob, entry.key, false, entry.name);
       } catch (e) {
-        errEl.textContent = "Couldn't read that image.";
+        errEl.textContent = "Couldn't read that file.";
         errEl.hidden = false;
       }
     }
@@ -184,7 +219,7 @@ export async function photoPicker(containerEl, existingRecordId) {
       }
       const ids = [...kept.keys()];
       for (const a of added) {
-        const photo = { id: uuid(), recordId, blob: a.blob, createdAt: new Date().toISOString() };
+        const photo = { id: uuid(), recordId, blob: a.blob, name: a.name || '', createdAt: new Date().toISOString() };
         await put('photos', photo);
         ids.push(photo.id);
       }

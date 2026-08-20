@@ -4,7 +4,9 @@ import { getAll, importData } from './db.js';
 import { todayStr } from './fmt.js';
 
 const APP_ID = 'family-health-tracker';
-const SCHEMA_VERSION = 3;
+// v4: attachments may be PDFs and carry a `name` — older app versions would
+// render them as broken images, so they must refuse v4 backups.
+const SCHEMA_VERSION = 4;
 const LAST_BACKUP_KEY = 'fht-last-backup';
 
 async function blobToBase64(blob) {
@@ -32,7 +34,7 @@ async function buildBackupPayload() {
   const photos = [];
   for (const p of photoObjs) {
     photos.push({
-      id: p.id, recordId: p.recordId, createdAt: p.createdAt,
+      id: p.id, recordId: p.recordId, createdAt: p.createdAt, name: p.name || '',
       mime: p.blob.type, data: await blobToBase64(p.blob),
     });
   }
@@ -169,6 +171,7 @@ export async function parseBackupFile(file) {
 export async function importBackup(data, mode) {
   const photos = (data.photos || []).map((p) => ({
     id: p.id, recordId: p.recordId, createdAt: p.createdAt || '',
+    name: typeof p.name === 'string' ? p.name : '',
     blob: base64ToBlob(p.data, p.mime),
   }));
   // Normalize dates to strings: a record/vital with a missing or non-string

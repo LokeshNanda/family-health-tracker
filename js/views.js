@@ -367,7 +367,7 @@ export async function recordFormView(app, { memberId, type, recordId }) {
       ${field(TITLE_LABEL[rType], `<input name="title" required maxlength="120" value="${v('title')}" placeholder="${TITLE_HINT[rType]}" autocomplete="off">`)}
       ${extra}
       ${field('Notes', `<textarea name="notes" rows="3" maxlength="2000">${v('notes')}</textarea>`)}
-      <div class="field"><span class="field-label">Photos (prescriptions, reports)</span><div id="photo-picker"></div></div>
+      <div class="field"><span class="field-label">Attachments (photos, PDF reports)</span><div id="photo-picker"></div></div>
       <p class="error" id="form-error" hidden></p>
       <button class="btn btn-primary btn-block" type="submit">${record ? 'Save changes' : `Add ${t.label.toLowerCase()}`}</button>
       ${record ? '<button class="btn btn-danger-ghost btn-block" type="button" id="btn-del-record">Delete this record</button>' : ''}

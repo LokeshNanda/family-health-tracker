@@ -419,6 +419,20 @@ input:focus-visible, select:focus-visible, textarea:focus-visible,
   border-radius: 10px; border: 1px solid var(--line); cursor: pointer;
   display: block;
 }
+.photo-thumb-pdf {
+  width: 72px; height: 72px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--card); color: var(--ink); cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.3rem; padding: 0.3rem;
+}
+.pdf-badge {
+  background: var(--rose); color: #fff; font-size: 0.62rem; font-weight: 700;
+  padding: 0.1rem 0.4rem; border-radius: 4px; letter-spacing: 0.05em;
+}
+.pdf-name {
+  font-size: 0.62rem; color: var(--ink-soft); max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .photo-remove {
   position: absolute; top: -6px; right: -6px;
   width: 22px; height: 22px; border-radius: 50%;
@@ -516,6 +530,14 @@ polyline.chart-line-b { stroke: var(--chart-b); stroke-width: 2; }
   width: 100%; aspect-ratio: 1; object-fit: cover;
   border-radius: var(--radius); border: 1px solid var(--line); cursor: pointer;
 }
+
+.detail-pdfs { display: grid; gap: 0.5rem; margin-bottom: 0.75rem; }
+.detail-pdf {
+  display: flex; align-items: center; gap: 0.6rem; text-align: left;
+  padding: 0.7rem 0.9rem; border-radius: var(--radius);
+  border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer;
+}
+.detail-pdf .pdf-name { font-size: 0.9rem; color: var(--ink); }
 
 /* ---- Vaccines ---- */
 

@@ -2,7 +2,7 @@
 
 import { get } from './db.js';
 import { esc, fmtDate, TYPES, ICONS } from './fmt.js';
-import { getPhotosForRecord, openViewer } from './photos.js';
+import { getPhotosForRecord, openViewer, openPdfExternal, isPdf } from './photos.js';
 
 function row(label, value) {
   if (!value) return '';
@@ -19,13 +19,17 @@ export async function recordDetailView(app, recordId) {
   document.getElementById('btn-home').hidden = false;
   document.title = `${t.label} · Family Health Tracker`;
 
-  const photos = await getPhotosForRecord(recordId);
+  const attachments = await getPhotosForRecord(recordId);
+  const photos = attachments.filter((p) => !isPdf(p.blob));
+  const pdfs = attachments.filter((p) => isPdf(p.blob));
   const objectUrls = [];
   const photoGrid = photos.map((p, i) => {
     const url = URL.createObjectURL(p.blob);
     objectUrls.push(url);
     return `<img class="detail-photo" data-i="${i}" src="${url}" alt="Attached photo ${i + 1}">`;
   }).join('');
+  const pdfList = pdfs.map((p, i) =>
+    `<button type="button" class="detail-pdf" data-i="${i}"><span class="pdf-badge">PDF</span><span class="pdf-name">${esc(p.name || 'Report')}</span></button>`).join('');
   window.addEventListener('hashchange', () => objectUrls.forEach((u) => URL.revokeObjectURL(u)), { once: true });
 
   let typeRows = '';
@@ -62,10 +66,14 @@ export async function recordDetailView(app, recordId) {
         ${record.notes ? `<div class="detail-row"><span class="detail-label">Notes</span><span class="detail-value detail-notes">${esc(record.notes)}</span></div>` : ''}
       </div>
       ${photos.length ? `<p class="section-heading">Photos</p><div class="detail-photos">${photoGrid}</div>` : ''}
+      ${pdfs.length ? `<p class="section-heading">Documents</p><div class="detail-pdfs">${pdfList}</div>` : ''}
       <a class="btn btn-primary btn-block" href="#/record/${esc(recordId)}/edit">Edit record</a>
     </section>`;
 
   app.querySelectorAll('.detail-photo').forEach((img) => {
     img.addEventListener('click', () => openViewer(photos.map((p) => p.blob), Number(img.dataset.i)));
+  });
+  app.querySelectorAll('.detail-pdf').forEach((btn) => {
+    btn.addEventListener('click', () => openPdfExternal(pdfs[Number(btn.dataset.i)].blob));
   });
 }
