@@ -12,6 +12,7 @@
   --rose: #B4483F;
   --blue: #3A6B9C;
   --leaf: #3F7D4E;
+  --violet: #6E4E9E;
   --line: #DCE4DC;
   --danger: #A03428;
   --chart-a: #157F5F;
@@ -158,6 +159,7 @@ body {
 .btn-type.type-symptom svg { color: var(--rose); }
 .btn-type.type-visit svg { color: var(--blue); }
 .btn-type.type-medication svg { color: var(--leaf); }
+.btn-type.type-lab svg { color: var(--violet); }
 
 /* ---- Member cards (Home) ---- */
 
@@ -281,6 +283,7 @@ body {
 .type-symptom .record-dot { border-color: var(--rose); color: var(--rose); }
 .type-visit .record-dot { border-color: var(--blue); color: var(--blue); }
 .type-medication .record-dot { border-color: var(--leaf); color: var(--leaf); }
+.type-lab .record-dot { border-color: var(--violet); color: var(--violet); }
 
 .record-body {
   display: block;
@@ -427,12 +430,27 @@ input:focus-visible, select:focus-visible, textarea:focus-visible,
   position: fixed; inset: 0; z-index: 100;
   background: rgba(20, 30, 26, 0.92);
   display: flex; align-items: center; justify-content: center;
+  touch-action: none; /* horizontal swipes navigate; don't scroll the page behind */
 }
 .photo-viewer img { max-width: 96vw; max-height: 92vh; border-radius: 8px; }
 .photo-viewer-close {
   position: absolute; top: calc(0.75rem + env(safe-area-inset-top)); right: 0.75rem;
   width: 44px; height: 44px; border-radius: 50%; border: none;
   background: rgba(255, 255, 255, 0.15); color: #fff; font-size: 1.1rem; cursor: pointer;
+}
+.photo-viewer-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 44px; border-radius: 50%; border: none;
+  background: rgba(255, 255, 255, 0.15); color: #fff;
+  font-size: 1.7rem; line-height: 1; cursor: pointer;
+}
+.photo-viewer-prev { left: 0.75rem; }
+.photo-viewer-next { right: 0.75rem; }
+.photo-viewer-count {
+  position: absolute; bottom: calc(1rem + env(safe-area-inset-bottom));
+  left: 50%; transform: translateX(-50%);
+  color: #fff; background: rgba(0, 0, 0, 0.45);
+  padding: 0.15rem 0.65rem; border-radius: 999px; font-size: 0.85rem;
 }
 
 /* ---- Vitals ---- */
@@ -534,6 +552,7 @@ polyline.chart-line-b { stroke: var(--chart-b); stroke-width: 2; }
     --rose: #D9837A;
     --blue: #7FA9DB;
     --leaf: #7FBD8C;
+    --violet: #AB90D6;
     --danger: #E07A6C;
     --chart-a: #189A6C;
     --chart-b: #6489DE;

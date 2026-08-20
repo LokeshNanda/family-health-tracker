@@ -42,6 +42,10 @@ export async function recordDetailView(app, recordId) {
       ${row('Frequency', esc(record.frequency || '') || '')}
       ${row('Until', record.endDate ? fmtDate(record.endDate) : '<span class="badge badge-active">Active</span>')}
       ${row('Prescribed by', record.doctorName ? `Dr. ${esc(record.doctorName)}` : '')}`;
+  } else if (record.type === 'lab') {
+    typeRows = `
+      ${row('Lab', esc(record.labName || '') || '')}
+      ${row('Ordered by', record.doctorName ? `Dr. ${esc(record.doctorName)}` : '')}`;
   }
 
   app.innerHTML = `
@@ -62,6 +66,6 @@ export async function recordDetailView(app, recordId) {
     </section>`;
 
   app.querySelectorAll('.detail-photo').forEach((img) => {
-    img.addEventListener('click', () => openViewer(photos[Number(img.dataset.i)].blob));
+    img.addEventListener('click', () => openViewer(photos.map((p) => p.blob), Number(img.dataset.i)));
   });
 }

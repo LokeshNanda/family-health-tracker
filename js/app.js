@@ -16,7 +16,7 @@ const ROUTES = [
   [/^#\/search$/, () => searchView(app)],
   [/^#\/member\/new$/, () => memberFormView(app, null)],
   [/^#\/member\/([^/]+)\/edit$/, (id) => memberFormView(app, id)],
-  [/^#\/member\/([^/]+)\/record\/new\/(symptom|visit|medication)$/,
+  [/^#\/member\/([^/]+)\/record\/new\/(symptom|visit|medication|lab)$/,
     (memberId, type) => recordFormView(app, { memberId, type })],
   [/^#\/member\/([^/]+)\/vitals(?:\/(weight|bp|sugar|temp|height))?$/,
     (id, type) => vitalsView(app, id, type || 'weight')],

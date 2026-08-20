@@ -3,8 +3,8 @@
 A private, phone-installable health diary for your family. Plain HTML/CSS/JS — no build step, no dependencies, no backend.
 
 - **Everything stays on your device.** Records live in your browser's IndexedDB; the hosted site is just the app shell.
-- Track **symptoms/illness, doctor visits and medications** per family member on a timeline.
-- Attach **photos** (prescriptions, lab reports) to any record — compressed and stored on-device, viewable full-screen.
+- Track **symptoms/illness, doctor visits, medications and lab reports** per family member on a timeline.
+- Attach **photos** (prescriptions, lab reports) to any record — compressed and stored on-device, viewable full-screen with swipe/arrow navigation.
 - Track **vitals** (weight, height + BMI, blood pressure, blood sugar, temperature) per person, with trend charts.
 - Keep each person's **vaccination list** — given, due, and overdue — shown on the doctor report.
 - **Doctor report** with date-range filter, print/save-as-PDF, and share-as-text.

@@ -74,6 +74,9 @@ function detailLine(r) {
       ? `Until ${fmtDate(r.endDate)}`
       : '<span class="badge badge-active">Active</span>');
     if (r.doctorName) parts.push(`Dr. ${esc(r.doctorName)}`);
+  } else if (r.type === 'lab') {
+    if (r.labName) parts.push(esc(r.labName));
+    if (r.doctorName) parts.push(`Dr. ${esc(r.doctorName)}`);
   }
   return parts.join(' &middot; ');
 }
@@ -217,7 +220,7 @@ export async function memberView(app, memberId, filter = 'all') {
   const records = await getRecordsForMember(memberId);
   const shown = filter === 'all' ? records : records.filter((r) => r.type === filter);
 
-  const chips = [['all', 'All'], ['symptom', TYPES.symptom.plural], ['visit', TYPES.visit.plural], ['medication', TYPES.medication.plural]]
+  const chips = [['all', 'All'], ['symptom', TYPES.symptom.plural], ['visit', TYPES.visit.plural], ['medication', TYPES.medication.plural], ['lab', TYPES.lab.plural]]
     .map(([key, label]) =>
       `<button class="chip${filter === key ? ' chip-on' : ''}" data-filter="${key}">${label}</button>`).join('');
 
@@ -246,6 +249,7 @@ export async function memberView(app, memberId, filter = 'all') {
           <a class="btn btn-type type-symptom" href="#/member/${esc(memberId)}/record/new/symptom">${ICONS.symptom} Symptom</a>
           <a class="btn btn-type type-visit" href="#/member/${esc(memberId)}/record/new/visit">${ICONS.visit} Visit</a>
           <a class="btn btn-type type-medication" href="#/member/${esc(memberId)}/record/new/medication">${ICONS.medication} Medicine</a>
+          <a class="btn btn-type type-lab" href="#/member/${esc(memberId)}/record/new/lab">${ICONS.lab} Lab report</a>
         </div>
       </div>
       <button class="btn btn-danger-ghost btn-block no-print" id="btn-del-member">Delete ${esc(member.name)}&hellip;</button>
@@ -316,13 +320,15 @@ const TITLE_LABEL = {
   symptom: 'What happened? <span class="req">*</span>',
   visit: 'Reason / diagnosis <span class="req">*</span>',
   medication: 'Medicine name <span class="req">*</span>',
+  lab: 'Test name <span class="req">*</span>',
 };
 const TITLE_HINT = {
   symptom: 'e.g., Fever 101°F',
   visit: 'e.g., Throat infection follow-up',
   medication: 'e.g., Azithromycin',
+  lab: 'e.g., CBC, Lipid profile',
 };
-const DATE_LABEL = { symptom: 'When did it start?', visit: 'Visit date', medication: 'Start date' };
+const DATE_LABEL = { symptom: 'When did it start?', visit: 'Visit date', medication: 'Start date', lab: 'Test date' };
 
 export async function recordFormView(app, { memberId, type, recordId }) {
   const record = recordId ? await get('records', recordId) : null;
@@ -349,6 +355,10 @@ export async function recordFormView(app, { memberId, type, recordId }) {
       ${field('Frequency', `<input name="frequency" maxlength="80" value="${v('frequency')}" placeholder="e.g., Once daily after food">`)}
       ${field('End date (leave empty if still taking)', `<input type="date" name="endDate" value="${v('endDate')}">`)}
       ${field('Prescribed by', `<input name="doctorName" maxlength="80" value="${v('doctorName')}">`)}`;
+  } else if (rType === 'lab') {
+    extra = `
+      ${field('Lab name', `<input name="labName" maxlength="80" value="${v('labName')}" placeholder="e.g., City Diagnostics">`)}
+      ${field('Ordered by', `<input name="doctorName" maxlength="80" value="${v('doctorName')}">`)}`;
   }
 
   app.innerHTML = `
@@ -398,6 +408,10 @@ export async function recordFormView(app, { memberId, type, recordId }) {
       obj.endDate = f.get('endDate') || '';
       obj.doctorName = f.get('doctorName').trim();
     }
+    if (rType === 'lab') {
+      obj.labName = f.get('labName').trim();
+      obj.doctorName = f.get('doctorName').trim();
+    }
     try {
       // Save the record first so a storage failure can't orphan photo changes,
       // then persist photo adds/removals and re-save the final attachment list.
@@ -425,7 +439,7 @@ export async function recordFormView(app, { memberId, type, recordId }) {
 
 // ---- Search ----
 
-const SEARCH_FIELDS = ['title', 'notes', 'doctorName', 'specialty', 'diagnosis', 'dosage', 'frequency'];
+const SEARCH_FIELDS = ['title', 'notes', 'doctorName', 'specialty', 'diagnosis', 'dosage', 'frequency', 'labName'];
 
 export async function searchView(app) {
   setTopbar('Search', true);
@@ -498,6 +512,9 @@ function plainDetail(r) {
     return [[r.dosage, r.frequency].filter(Boolean).join(' · '),
       r.endDate ? `Until ${fmtDate(r.endDate)}` : 'Active',
       r.doctorName ? `Dr. ${r.doctorName}` : ''].filter(Boolean).join(' · ');
+  }
+  if (r.type === 'lab') {
+    return [r.labName, r.doctorName ? `Dr. ${r.doctorName}` : ''].filter(Boolean).join(' · ');
   }
   return '';
 }

@@ -32,24 +32,83 @@ export async function getPhotosForRecord(recordId) {
   });
 }
 
-// Full-screen photo viewer overlay. Self-cleaning: closes (and revokes its
-// object URL) on tap, Escape, or any navigation (hashchange / back button).
-export function openViewer(blob) {
-  const url = URL.createObjectURL(blob);
+// Full-screen photo viewer overlay. Takes all of a record's photo blobs and a
+// start index: swipe (touch), arrow keys or the ‹ › buttons move between them.
+// Self-cleaning: closes (and revokes its object URLs) on tap, the ✕ button,
+// Escape, or any navigation (hashchange / back button).
+export function openViewer(blobs, startIndex = 0) {
+  const list = Array.isArray(blobs) ? blobs : [blobs];
+  const multi = list.length > 1;
+  const urls = list.map(() => null); // object URLs created on first view
+  let i = 0;
+
   const overlay = document.createElement('div');
   overlay.className = 'photo-viewer';
-  overlay.innerHTML = `<img src="${url}" alt="Attached photo"><button class="photo-viewer-close" aria-label="Close">&#10005;</button>`;
+  overlay.innerHTML = `
+    <img alt="Attached photo">
+    <button class="photo-viewer-close" aria-label="Close">&#10005;</button>
+    ${multi ? `
+      <button type="button" class="photo-viewer-nav photo-viewer-prev" aria-label="Previous photo">&#8249;</button>
+      <button type="button" class="photo-viewer-nav photo-viewer-next" aria-label="Next photo">&#8250;</button>
+      <span class="photo-viewer-count"></span>` : ''}`;
+  const img = overlay.querySelector('img');
+  const countEl = overlay.querySelector('.photo-viewer-count');
+
+  function show(n) {
+    i = (n + list.length) % list.length;
+    if (!urls[i]) urls[i] = URL.createObjectURL(list[i]);
+    img.src = urls[i];
+    if (countEl) countEl.textContent = `${i + 1} / ${list.length}`;
+  }
+
   const close = () => {
-    URL.revokeObjectURL(url);
+    urls.forEach((u) => u && URL.revokeObjectURL(u));
     overlay.remove();
     window.removeEventListener('hashchange', close);
     window.removeEventListener('keydown', onKey);
   };
-  const onKey = (e) => { if (e.key === 'Escape') close(); };
-  overlay.addEventListener('click', close);
+  const onKey = (e) => {
+    if (e.key === 'Escape') close();
+    else if (multi && e.key === 'ArrowLeft') show(i - 1);
+    else if (multi && e.key === 'ArrowRight') show(i + 1);
+  };
+
+  // Some browsers fire a click after a touch sequence; a swipe must navigate,
+  // not fall through to the click-to-close below.
+  let touchX = null;
+  let touchY = null;
+  let swiped = false;
+  overlay.addEventListener('touchstart', (e) => {
+    swiped = false;
+    touchX = e.touches[0].clientX;
+    touchY = e.touches[0].clientY;
+  }, { passive: true });
+  overlay.addEventListener('touchend', (e) => {
+    if (touchX === null) return;
+    const dx = e.changedTouches[0].clientX - touchX;
+    const dy = e.changedTouches[0].clientY - touchY;
+    touchX = touchY = null;
+    if (multi && Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      swiped = true;
+      show(dx < 0 ? i + 1 : i - 1);
+    }
+  }, { passive: true });
+
+  overlay.addEventListener('click', () => {
+    if (swiped) { swiped = false; return; }
+    close();
+  });
+  overlay.querySelectorAll('.photo-viewer-nav').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      show(btn.classList.contains('photo-viewer-prev') ? i - 1 : i + 1);
+    });
+  });
+
   window.addEventListener('hashchange', close);
   window.addEventListener('keydown', onKey);
   document.body.appendChild(overlay);
+  show(startIndex);
 }
 
 // Renders thumbnails + "Add photo" into containerEl. Tracks pending adds and removals.
@@ -83,7 +142,14 @@ export async function photoPicker(containerEl, existingRecordId) {
     const wrap = document.createElement('div');
     wrap.className = 'photo-thumb';
     wrap.innerHTML = `<img src="${url}" alt="Attachment"><button type="button" class="photo-remove" aria-label="Remove photo">&#10005;</button>`;
-    wrap.querySelector('img').addEventListener('click', () => openViewer(blob));
+    wrap.querySelector('img').addEventListener('click', () => {
+      // Thumbnail order: kept existing photos first, then pending adds.
+      const current = [
+        ...existing.filter((p) => kept.has(p.id)).map((p) => p.blob),
+        ...added.map((a) => a.blob),
+      ];
+      openViewer(current, Math.max(0, current.indexOf(blob)));
+    });
     wrap.querySelector('.photo-remove').addEventListener('click', () => {
       if (isExisting) kept.delete(key);
       else added.splice(added.findIndex((a) => a.key === key), 1);
