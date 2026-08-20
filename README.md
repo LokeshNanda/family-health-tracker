@@ -4,6 +4,17 @@ A private, installable health diary for your family. Track symptoms, doctor visi
 
 **Everything stays on your device.** There is no backend, no account and no analytics. Records are stored in your browser's local database (IndexedDB); the hosted site only delivers the app shell. Built with plain HTML, CSS and JavaScript — no build step, no dependencies.
 
+## Try it
+
+**Live app: [lokeshnanda.github.io/family-health-tracker](https://lokeshnanda.github.io/family-health-tracker/)**
+
+<table>
+  <tr>
+    <td><img src="docs/qr.png" width="150" alt="QR code linking to the live app"></td>
+    <td>The app works best on a phone. Point your phone's camera at this QR code to open it, then install it to your home screen — the two-minute walkthroughs are in <a href="#install-on-your-phone">Install on your phone</a> below.</td>
+  </tr>
+</table>
+
 ## Screenshots
 
 <table>
@@ -32,23 +43,40 @@ A private, installable health diary for your family. Track symptoms, doctor visi
 
 ## Install on your phone
 
-The app is a Progressive Web App (PWA): you install it from the browser, after which it launches full-screen from its own icon and works offline.
+The app is a Progressive Web App (PWA): you install it from the browser, after which it launches full-screen from its own icon and works offline. The animations below play through the whole flow for each platform.
 
 ### Android (Chrome)
 
-1. Open the app's URL in Chrome.
-2. Tap the three-dot menu in the top-right corner.
-3. Tap **Add to Home screen** (on newer Chrome versions: **Install app**), then confirm.
-4. The app appears on your home screen and app drawer. Launch it from there — it opens full-screen without browser controls.
-
-Chrome may also show an install banner at the bottom of the page on your first visit; tapping that does the same thing.
+<table>
+  <tr>
+    <td><img src="docs/install/android.gif" width="280" alt="Animated walkthrough of installing the app on Android"></td>
+    <td>
+      <ol>
+        <li>Open <a href="https://lokeshnanda.github.io/family-health-tracker/">the app</a> in Chrome.</li>
+        <li>Tap the three-dot menu in the top-right corner.</li>
+        <li>Tap <strong>Add to Home screen</strong> (on newer Chrome versions: <strong>Install app</strong>), then confirm.</li>
+        <li>The app appears on your home screen and app drawer. Launch it from there — it opens full-screen without browser controls.</li>
+      </ol>
+      <p>Chrome may also show an install banner at the bottom of the page on your first visit; tapping that does the same thing.</p>
+    </td>
+  </tr>
+</table>
 
 ### iPhone / iPad (Safari)
 
-1. Open the app's URL in Safari. (Installation only works from Safari, not Chrome or other browsers on iOS.)
-2. Tap the **Share** button (the square with an upward arrow) in the toolbar.
-3. Scroll down and tap **Add to Home Screen**.
-4. Tap **Add**. The app appears on your home screen and launches full-screen.
+<table>
+  <tr>
+    <td><img src="docs/install/ios.gif" width="280" alt="Animated walkthrough of installing the app on iPhone"></td>
+    <td>
+      <ol>
+        <li>Open <a href="https://lokeshnanda.github.io/family-health-tracker/">the app</a> in Safari. (Installation only works from Safari, not Chrome or other browsers on iOS.)</li>
+        <li>Tap the <strong>Share</strong> button (the square with an upward arrow) in the toolbar.</li>
+        <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+        <li>Tap <strong>Add</strong>. The app appears on your home screen and launches full-screen.</li>
+      </ol>
+    </td>
+  </tr>
+</table>
 
 ### After installing
 
